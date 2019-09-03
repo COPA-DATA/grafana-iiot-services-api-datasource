@@ -1,0 +1,34 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+      "target": "es5",
+      "module": "system",
+      "rootDir": "dist/",
+      "declaration": true,
+      "sourceMap": true,
+      "emitDecoratorMetadata": true,
+      "experimentalDecorators": true,
+      "noImplicitAny": false,
+      "moduleResolution": "node",
+      "outDir": "dist/"
+  },
+
+  "files": [
+    "dist/config_ctrl.ts",
+    "dist/datasource.ts",
+    "dist/module.ts",
+    "dist/query_ctrl.ts",
+    "dist/constants.ts"
+  ],
+
+  "include": [
+    "dist/**/*.ts"
+  ],
+  
+  "exclude": [
+      "node_modules/**/*",
+      "**/*.spec.ts",
+      "**/*specs.ts",
+      "src/**/*.d.ts"
+  ]
+}
