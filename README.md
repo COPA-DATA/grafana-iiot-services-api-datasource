@@ -134,7 +134,7 @@ The following images show the query editor for the different Query Types.
     - npm: 5.8.0
     - grunt: v1.0.4
     - grunt-cli: v1.2.0
-    - tsc v.3.5.1
+    - tsc v.3.6.2
 
 ## Build Steps
 
