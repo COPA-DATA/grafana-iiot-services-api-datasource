@@ -8,7 +8,7 @@ For general information on Service Grid and the involved components, please refe
 ## Prerequisites
 The following prerequisites need to me met in order to use this datasource:
 - working Service Grid installation with Service Grid API >= 1.0.1908.31001
-- Grafana Version >= 6.1.0
+- Grafana Version >= 6.3.3
 
 
 ## Supported data queries
