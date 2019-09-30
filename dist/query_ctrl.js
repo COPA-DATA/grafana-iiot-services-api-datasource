@@ -41,6 +41,7 @@ System.register(["lodash", "app/plugins/sdk", "./css/query_editor.css!", "./cons
                     _this.target.datasourceId = _this.target.datasourceId || 'select Datasource';
                     _this.target.archiveId = _this.target.archiveId || 'select Archive';
                     _this.target.variable = _this.target.variable || 'select Variable';
+                    _this.target.alias = _this.target.alias || '';
                     _this.target.queryType = _this.target.queryType || constants_1.QueryType.ArchiveData;
                     _this.queryTypes = [{ text: 'Archive Data', value: constants_1.QueryType.ArchiveData }, { text: 'Alarms', value: constants_1.QueryType.Alarms }, { text: 'Events', value: constants_1.QueryType.Events }];
                     _this.target.alarmEventsFilter = _this.target.alarmEventsFilter || {};

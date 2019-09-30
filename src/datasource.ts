@@ -27,9 +27,10 @@ export default class ServiceGridDataSource {
       
       return {
         refId: item.refId,
-        variable: item.variable,
         datasourceId: item.datasourceId,
         archiveId: item.archiveId,
+        variable: item.variable,
+        alias: item.alias,
         queryType: item.queryType,
         alarmEventsFilter: item.alarmEventsFilter
       };
@@ -70,12 +71,13 @@ export default class ServiceGridDataSource {
 
     let requests = [];
     let requestGrouped = {};
+    let variableNameMapping = {};
     
     if (queries.length === 0) {
       return Promise.resolve({ data: [] });
     }
 
-    for (let query of queries.filter(q => q.queryType == QueryType.ArchiveData) )
+    for (let query of queries)
     {
       // ignore query for incomplete definitions
       if (query.datasourceId === undefined || query.archiveId === undefined || query.variable === undefined)
@@ -97,8 +99,10 @@ export default class ServiceGridDataSource {
       {
         requestGrouped[query.datasourceId][query.archiveId].push(query.variable);
       }
+    
+      // fill mapping between variableName and Alias
+      variableNameMapping[query.variable] = query.alias;
     }
-
 
     for (let datasourceId of Object.keys(requestGrouped))
     {
@@ -169,9 +173,11 @@ export default class ServiceGridDataSource {
           {
             throw {data:{message: 'Query Error: Retrieved data has invalid format'}};
           }
-          let name = variableEntry.archiveVariable.variableName;
 
-          let varResultElement = {target:name, datapoints: dataPoints};
+          let variableName = variableEntry.archiveVariable.variableName;
+          let displayName = variableNameMapping[variableName] || variableName;
+
+          let varResultElement = {target:displayName, datapoints: dataPoints};
           varResults.push(varResultElement);
         }
 
@@ -393,6 +399,8 @@ export default class ServiceGridDataSource {
         datasources.push(dsObj);
       }
       
+      datasources.sort((a,b) => (a.text > b.text) ? 1 : -1);
+
       return Promise.resolve(datasources);
 
     },(err:any) => {
@@ -422,17 +430,32 @@ export default class ServiceGridDataSource {
         throw {data:{message: "Query Error: Could not parse list of archives"}};
       }
 
-      for (let arch of responseArchives)
-      {
-        if (!('identification' in arch) || !('name' in arch))
+      let extractArchives = (archiveArray: [any], isAggregated:boolean) => {
+        for (let arch of archiveArray)
         {
-          throw {data:{message: "Query Error: Unknown/Invalid format"}};
-        }
+          if (!('identification' in arch) || !('name' in arch))
+          {
+            throw {data:{message: "Query Error: Unknown/Invalid format"}};
+          }
+  
+          let displayName = (isAggregated ? "- aggregated - " : "") + arch.name;
+          let archObj = {"text": displayName, "value":arch.identification};
+          archives.push(archObj);
 
-        let archObj = {"text": arch.name, "value":arch.identification};
-        archives.push(archObj);
-      }
+          if ('aggregatedArchives' in arch)
+          {
+            extractArchives(arch.aggregatedArchives, true);
+          }
+        }
+      };
+
+      extractArchives(responseArchives, false);
       
+      // sort archives, ignore prefix "AGGREGATED: "
+      archives.sort((a,b) => {
+        return (a.text.replace(/- aggregated - /,'') > b.text.replace(/- aggregated - /,'')) ? 1 : -1;
+      });
+
       return Promise.resolve(archives);
 
     },(err:any) => {
@@ -465,6 +488,8 @@ export default class ServiceGridDataSource {
         return {text: item.variableName, value: item.variableName};
       });
 
+      variables.sort((a,b) => (a.text > b.text) ? 1 : -1);
+
       return Promise.resolve(variables);
 
     },(err:any) => {
@@ -493,6 +518,8 @@ export default class ServiceGridDataSource {
       let variables = res.data.variables.map(v => {
         return {text: v.name, value: v.name};
       });
+
+      variables.sort((a,b) => (a.text > b.text) ? 1 : -1);
 
       return Promise.resolve(variables);
 

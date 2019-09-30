@@ -25,9 +25,10 @@ System.register(["./constants"], function (exports_1, context_1) {
                         }
                         return {
                             refId: item.refId,
-                            variable: item.variable,
                             datasourceId: item.datasourceId,
                             archiveId: item.archiveId,
+                            variable: item.variable,
+                            alias: item.alias,
                             queryType: item.queryType,
                             alarmEventsFilter: item.alarmEventsFilter
                         };
@@ -56,11 +57,12 @@ System.register(["./constants"], function (exports_1, context_1) {
                 ServiceGridDataSource.prototype.queryVariableValues = function (queries, dateFrom, dateTo) {
                     var requests = [];
                     var requestGrouped = {};
+                    var variableNameMapping = {};
                     if (queries.length === 0) {
                         return Promise.resolve({ data: [] });
                     }
-                    for (var _i = 0, _a = queries.filter(function (q) { return q.queryType == constants_1.QueryType.ArchiveData; }); _i < _a.length; _i++) {
-                        var query = _a[_i];
+                    for (var _i = 0, queries_1 = queries; _i < queries_1.length; _i++) {
+                        var query = queries_1[_i];
                         if (query.datasourceId === undefined || query.archiveId === undefined || query.variable === undefined) {
                             continue;
                         }
@@ -73,11 +75,12 @@ System.register(["./constants"], function (exports_1, context_1) {
                         if (requestGrouped[query.datasourceId][query.archiveId].includes(query.variable) == false) {
                             requestGrouped[query.datasourceId][query.archiveId].push(query.variable);
                         }
+                        variableNameMapping[query.variable] = query.alias;
                     }
-                    for (var _b = 0, _c = Object.keys(requestGrouped); _b < _c.length; _b++) {
-                        var datasourceId = _c[_b];
-                        for (var _d = 0, _e = Object.keys(requestGrouped[datasourceId]); _d < _e.length; _d++) {
-                            var archiveId = _e[_d];
+                    for (var _a = 0, _b = Object.keys(requestGrouped); _a < _b.length; _a++) {
+                        var datasourceId = _b[_a];
+                        for (var _c = 0, _d = Object.keys(requestGrouped[datasourceId]); _c < _d.length; _c++) {
+                            var archiveId = _d[_c];
                             var requestUrl = this.url + "/api/v1/datasources/" + datasourceId + "/archives/" + archiveId + "/query";
                             var variableList = requestGrouped[datasourceId][archiveId];
                             var requestBody = {
@@ -124,8 +127,9 @@ System.register(["./constants"], function (exports_1, context_1) {
                                 if (!('archiveVariable' in variableEntry) || !('variableName' in variableEntry.archiveVariable)) {
                                     throw { data: { message: 'Query Error: Retrieved data has invalid format' } };
                                 }
-                                var name_1 = variableEntry.archiveVariable.variableName;
-                                var varResultElement = { target: name_1, datapoints: dataPoints };
+                                var variableName = variableEntry.archiveVariable.variableName;
+                                var displayName = variableNameMapping[variableName] || variableName;
+                                var varResultElement = { target: displayName, datapoints: dataPoints };
                                 varResults.push(varResultElement);
                             }
                         }
@@ -140,8 +144,8 @@ System.register(["./constants"], function (exports_1, context_1) {
                     if (queries.length === 0) {
                         return Promise.resolve({ data: [] });
                     }
-                    for (var _i = 0, queries_1 = queries; _i < queries_1.length; _i++) {
-                        var query = queries_1[_i];
+                    for (var _i = 0, queries_2 = queries; _i < queries_2.length; _i++) {
+                        var query = queries_2[_i];
                         var requestUrl = this.url + "/api/v1/datasources/" + query.datasourceId;
                         if (queryType == constants_1.QueryType.Alarms)
                             requestUrl = requestUrl + "/alarms/query";
@@ -286,6 +290,7 @@ System.register(["./constants"], function (exports_1, context_1) {
                             var dsObj = { "text": ds.name, "value": ds.dataSourceId };
                             datasources.push(dsObj);
                         }
+                        datasources.sort(function (a, b) { return (a.text > b.text) ? 1 : -1; });
                         return Promise.resolve(datasources);
                     }, function (err) {
                         return Promise.resolve([]);
@@ -304,14 +309,24 @@ System.register(["./constants"], function (exports_1, context_1) {
                         if (responseArchives === undefined || responseArchives instanceof Array == false) {
                             throw { data: { message: "Query Error: Could not parse list of archives" } };
                         }
-                        for (var _i = 0, responseArchives_1 = responseArchives; _i < responseArchives_1.length; _i++) {
-                            var arch = responseArchives_1[_i];
-                            if (!('identification' in arch) || !('name' in arch)) {
-                                throw { data: { message: "Query Error: Unknown/Invalid format" } };
+                        var extractArchives = function (archiveArray, isAggregated) {
+                            for (var _i = 0, archiveArray_1 = archiveArray; _i < archiveArray_1.length; _i++) {
+                                var arch = archiveArray_1[_i];
+                                if (!('identification' in arch) || !('name' in arch)) {
+                                    throw { data: { message: "Query Error: Unknown/Invalid format" } };
+                                }
+                                var displayName = (isAggregated ? "- aggregated - " : "") + arch.name;
+                                var archObj = { "text": displayName, "value": arch.identification };
+                                archives.push(archObj);
+                                if ('aggregatedArchives' in arch) {
+                                    extractArchives(arch.aggregatedArchives, true);
+                                }
                             }
-                            var archObj = { "text": arch.name, "value": arch.identification };
-                            archives.push(archObj);
-                        }
+                        };
+                        extractArchives(responseArchives, false);
+                        archives.sort(function (a, b) {
+                            return (a.text.replace(/- aggregated - /, '') > b.text.replace(/- aggregated - /, '')) ? 1 : -1;
+                        });
                         return Promise.resolve(archives);
                     }, function (err) {
                         return Promise.resolve([]);
@@ -332,6 +347,7 @@ System.register(["./constants"], function (exports_1, context_1) {
                         var variables = responseVariables.map(function (item) {
                             return { text: item.variableName, value: item.variableName };
                         });
+                        variables.sort(function (a, b) { return (a.text > b.text) ? 1 : -1; });
                         return Promise.resolve(variables);
                     }, function (err) {
                         return Promise.resolve([]);
@@ -351,6 +367,7 @@ System.register(["./constants"], function (exports_1, context_1) {
                         var variables = res.data.variables.map(function (v) {
                             return { text: v.name, value: v.name };
                         });
+                        variables.sort(function (a, b) { return (a.text > b.text) ? 1 : -1; });
                         return Promise.resolve(variables);
                     }, function (err) {
                         return Promise.resolve([]);

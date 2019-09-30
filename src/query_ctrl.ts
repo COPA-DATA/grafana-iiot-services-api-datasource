@@ -22,6 +22,7 @@ export class ServiceGridQueryCtrl extends QueryCtrl {
     this.target.datasourceId = this.target.datasourceId || 'select Datasource';
     this.target.archiveId = this.target.archiveId || 'select Archive';
     this.target.variable = this.target.variable || 'select Variable';
+    this.target.alias = this.target.alias || '';
     this.target.queryType = this.target.queryType || QueryType.ArchiveData;
 
     this.queryTypes = [{text:'Archive Data', value:QueryType.ArchiveData},{text:'Alarms', value:QueryType.Alarms},{text:'Events',value:QueryType.Events}];
