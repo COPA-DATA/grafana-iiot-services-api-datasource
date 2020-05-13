@@ -66,8 +66,8 @@ If there is no configuration file in folder *C:\Program Files\GrafanaLabs\grafan
 ```INI
 [server]
 protocol=https
-cert_file=<path>\cert.pem
-cert_key=<path>\server.key
+cert_file=<path>\certificate.crt
+cert_key=<path>\private.key
 domain=<grafana domain>
 root_url=%(protocol)s://%(domain)s:3000/
 
