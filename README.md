@@ -187,3 +187,6 @@ Timestamps of alarm and event entries are encoded as UNIX timestamps. Using the 
 The format `/.\*Time\*/` allows all relevant columns to be formated as date time.
 
 ![](./doc/timestamp-format.png)
+
+## Logging in to Grafana using OAuth does not work for users of the zenon RT
+When using the zenon RT authentication as Identity Provider for the Identity Serivce, make sure to enable the message control option for the desired user and provide a email address. This is necessary in order that zenon users can be used to login to Grafana using the Identity Service.
