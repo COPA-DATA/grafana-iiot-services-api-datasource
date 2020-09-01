@@ -18,11 +18,11 @@
       {"name": "Project site", "url": "https://github.com/COPA-DATA/grafana-service-grid-api-datasource"}
     ],
     "version": "1.0.1",
-    "updated": "2019-09-30"
+    "updated": "2020-09-01"
   },
 
   "dependencies": {
-    "grafanaVersion": "6.1.x",
+    "grafanaVersion": "6.3.3",
     "plugins": [ ]
   },
 

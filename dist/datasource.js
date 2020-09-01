@@ -75,7 +75,12 @@ System.register(["./constants"], function (exports_1, context_1) {
                         if (requestGrouped[query.datasourceId][query.archiveId].includes(query.variable) == false) {
                             requestGrouped[query.datasourceId][query.archiveId].push(query.variable);
                         }
-                        variableNameMapping[query.variable] = query.alias;
+                        if (query.datasourceId in variableNameMapping == false) {
+                            variableNameMapping[query.datasourceId] = {};
+                        }
+                        if (query.variable in variableNameMapping[query.datasourceId] == false) {
+                            variableNameMapping[query.datasourceId][query.variable] = query.alias;
+                        }
                     }
                     for (var _a = 0, _b = Object.keys(requestGrouped); _a < _b.length; _a++) {
                         var datasourceId = _b[_a];
@@ -127,8 +132,10 @@ System.register(["./constants"], function (exports_1, context_1) {
                                 if (!('archiveVariable' in variableEntry) || !('variableName' in variableEntry.archiveVariable)) {
                                     throw { data: { message: 'Query Error: Retrieved data has invalid format' } };
                                 }
+                                var startIndex = response.url.indexOf("api/v1/datasources/") + 19;
+                                var datasource = response.url.substring(startIndex, startIndex + 36);
                                 var variableName = variableEntry.archiveVariable.variableName;
-                                var displayName = variableNameMapping[variableName] || variableName;
+                                var displayName = variableNameMapping[datasource][variableName] || variableName;
                                 var varResultElement = { target: displayName, datapoints: dataPoints };
                                 varResults.push(varResultElement);
                             }

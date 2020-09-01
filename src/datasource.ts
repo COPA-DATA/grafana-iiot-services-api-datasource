@@ -101,7 +101,18 @@ export default class ServiceGridDataSource {
       }
     
       // fill mapping between variableName and Alias
-      variableNameMapping[query.variable] = query.alias;
+      // mapping will be unique per datasource
+      if (query.datasourceId in variableNameMapping == false)
+      {
+        variableNameMapping[query.datasourceId] = {};
+      }
+
+      if (query.variable in variableNameMapping[query.datasourceId] == false)
+      {
+        variableNameMapping[query.datasourceId][query.variable] = query.alias;
+      }
+        
+      
     }
 
     for (let datasourceId of Object.keys(requestGrouped))
@@ -139,7 +150,7 @@ export default class ServiceGridDataSource {
       // perform the mapping for each successful request
       for (let response of res)
       {
-
+        
         if (res === undefined || !('data' in response) || !('variables' in response.data))
         {
           throw {data:{message: 'Query Error: Retrieved data has invalid format'}};
@@ -174,8 +185,12 @@ export default class ServiceGridDataSource {
             throw {data:{message: 'Query Error: Retrieved data has invalid format'}};
           }
 
+          // find datasourceId to apply nameMapping
+          let startIndex = response.url.indexOf("api/v1/datasources/") + 19
+          let datasource = response.url.substring(startIndex,startIndex+36)
+
           let variableName = variableEntry.archiveVariable.variableName;
-          let displayName = variableNameMapping[variableName] || variableName;
+          let displayName = variableNameMapping[datasource][variableName] || variableName;
 
           let varResultElement = {target:displayName, datapoints: dataPoints};
           varResults.push(varResultElement);

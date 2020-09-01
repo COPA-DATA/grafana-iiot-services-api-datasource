@@ -58,13 +58,16 @@ For additional information on the Configuration Backend, please refer to the Ser
 
 Grafana supports the OAuth2 authentication mechanism for authenticating users against OAuth2 Identity providers. Grafana plugins allow to forward those OAuth2 tokens to the respective API endpoints, where they would query the data from. In terms of Service Grid, Grafana must be able to authenticate a user against the Service Grid Identity Service and has to forward this OAuth2 token via the Datasource Plugin to the Service Grid API, to read data from it.
 In fact this means that the Grafana Backend needs to be configured to use OAuth2 (https://grafana.com/docs/auth/generic-oauth/).
+
 See the following configuration section from the configuration file *custom.ini*:
+
+If there is no configuration file in folder *C:\Program Files\GrafanaLabs\grafana\conf* called *custom.ini*, simply create a new empty text file and name it that way.
 
 ```INI
 [server]
 protocol=https
-cert_file=<path>\cert.pem
-cert_key=<path>\server.key
+cert_file=<path>\certificate.crt
+cert_key=<path>\private.key
 domain=<grafana domain>
 root_url=%(protocol)s://%(domain)s:3000/
 
@@ -81,8 +84,13 @@ allow_sign_up=true
 send_client_credentials_via_post=true
 ```
 
-After the successful configuration, Grafana needs to be restartet, so that the changes take effect.
+**Hint:** When Grafana is being operated using Docker, please refer to the Grafana documentation (https://grafana.com/docs/grafana/latest/installation/configure-docker/) how to provide configuration options via environment variables.
 
+After the successful configuration, Grafana needs to be restartet, so that the changes take effect.
+Depending on your installation approach, different actions might be required:
+* restart the Grafana service using task manager
+* restart the executable manually when Grafana has been started using Powershell or Command Prompt
+* restart the Grafana Docker container
 
 ### Configuration Datasource
 
@@ -179,3 +187,6 @@ Timestamps of alarm and event entries are encoded as UNIX timestamps. Using the 
 The format `/.\*Time\*/` allows all relevant columns to be formated as date time.
 
 ![](./doc/timestamp-format.png)
+
+## Logging in to Grafana using OAuth does not work for users of the zenon RT
+When using the zenon RT authentication as Identity Provider for the Identity Serivce, make sure to enable the message control option for the desired user and provide a email address. This is necessary in order that zenon users can be used to login to Grafana using the Identity Service.
