@@ -8,6 +8,7 @@ export default class ServiceGridDataSource {
   name: string;
   url: string;
   q: any;
+  uuidRegex: string = '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}';
   
   /** @ngInject */
   constructor(instanceSettings, $q, private backendSrv, private templateSrv) {
@@ -186,11 +187,14 @@ export default class ServiceGridDataSource {
           }
 
           // find datasourceId to apply nameMapping
-          let startIndex = response.url.indexOf("api/v1/datasources/") + 19
-          let datasource = response.url.substring(startIndex,startIndex+36)
+          let datasourceUuid = "";
+          let matches = response.url.match(this.uuidRegex);
+          if (matches.length >= 1) {
+            datasourceUuid = matches[0];
+          }
 
           let variableName = variableEntry.archiveVariable.variableName;
-          let displayName = variableNameMapping[datasource][variableName] || variableName;
+          let displayName = variableNameMapping[datasourceUuid][variableName] || variableName;
 
           let varResultElement = {target:displayName, datapoints: dataPoints};
           varResults.push(varResultElement);

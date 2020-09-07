@@ -13,6 +13,7 @@ System.register(["./constants"], function (exports_1, context_1) {
                 function ServiceGridDataSource(instanceSettings, $q, backendSrv, templateSrv) {
                     this.backendSrv = backendSrv;
                     this.templateSrv = templateSrv;
+                    this.uuidRegex = '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}';
                     this.q = $q;
                     this.name = instanceSettings.name;
                     this.id = instanceSettings.id;
@@ -55,6 +56,7 @@ System.register(["./constants"], function (exports_1, context_1) {
                     }
                 };
                 ServiceGridDataSource.prototype.queryVariableValues = function (queries, dateFrom, dateTo) {
+                    var _this = this;
                     var requests = [];
                     var requestGrouped = {};
                     var variableNameMapping = {};
@@ -132,10 +134,13 @@ System.register(["./constants"], function (exports_1, context_1) {
                                 if (!('archiveVariable' in variableEntry) || !('variableName' in variableEntry.archiveVariable)) {
                                     throw { data: { message: 'Query Error: Retrieved data has invalid format' } };
                                 }
-                                var startIndex = response.url.indexOf("api/v1/datasources/") + 19;
-                                var datasource = response.url.substring(startIndex, startIndex + 36);
+                                var datasourceUuid = "";
+                                var matches = response.url.match(_this.uuidRegex);
+                                if (matches.length >= 1) {
+                                    datasourceUuid = matches[0];
+                                }
                                 var variableName = variableEntry.archiveVariable.variableName;
-                                var displayName = variableNameMapping[datasource][variableName] || variableName;
+                                var displayName = variableNameMapping[datasourceUuid][variableName] || variableName;
                                 var varResultElement = { target: displayName, datapoints: dataPoints };
                                 varResults.push(varResultElement);
                             }
