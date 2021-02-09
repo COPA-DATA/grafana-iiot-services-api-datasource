@@ -8,14 +8,12 @@ export enum QueryType {
 
 export interface MyQuery extends DataQuery {
   datasourceId: string;
-  alias?: string;
   queryType: QueryType;
   alarmsEventsFilter:{variable?:string, onlyActive:boolean, onlyCleared:boolean, onlyUnacknowledged:boolean}
   archiveFilter:{archiveId?:string, variable?:string}
 }
 
 export const defaultQuery: Partial<MyQuery> = {
-  alias:'',
   queryType:QueryType.ArchiveData,
   alarmsEventsFilter:{variable:'*', onlyActive:false,onlyCleared:false, onlyUnacknowledged:false},
   archiveFilter:{}

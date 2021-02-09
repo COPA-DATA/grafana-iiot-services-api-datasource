@@ -1,7 +1,7 @@
 import defaults from 'lodash/defaults';
 
 import React, { Component } from 'react';
-import { AsyncSelect, Field, HorizontalGroup, Input, Label, Select, Switch, VerticalGroup } from '@grafana/ui';
+import { AsyncSelect, Field, HorizontalGroup, Label, Select, Switch, VerticalGroup } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from './DataSource';
 import { defaultQuery, MyDataSourceOptions, MyQuery, QueryType } from './types';
@@ -83,26 +83,10 @@ export class QueryEditor extends Component<Props, State> {
 
   }
 
-  updateAlias = () => {
-    this.aliasUpdatetimer = undefined;
-    this.props.onRunQuery();
-  }
-
-  onAliasChanged = (event: React.FormEvent<HTMLInputElement>) => {
-    const { query, onChange } = this.props;
-    onChange({ ...query, alias: event.currentTarget.value });
-
-    if (this.aliasUpdatetimer) {
-      clearTimeout(this.aliasUpdatetimer);
-    }
-    this.aliasUpdatetimer = setTimeout(this.updateAlias, 2000);
-  }
-
-
   render() {
     const query = defaults(this.props.query, defaultQuery);
     const { onChange, onRunQuery } = this.props;
-    const { datasourceId, queryType, archiveFilter, alarmsEventsFilter, alias } = query;
+    const { datasourceId, queryType, archiveFilter, alarmsEventsFilter } = query;
 
     const archiveFilterContent =
       <HorizontalGroup>
@@ -128,14 +112,6 @@ export class QueryEditor extends Component<Props, State> {
             defaultOptions
             value={this.state.archiveVariableSelectables.find(i => i.value == archiveFilter.variable)}
             invalid={!this.state.archiveVariableSelectables.find(i => i.value == archiveFilter.variable)}
-          />
-        </HorizontalGroup>
-        <HorizontalGroup>
-          <Label>Alias</Label>
-          <Input
-            name='alias'
-            value={alias}
-            onChange={this.onAliasChanged}
           />
         </HorizontalGroup>
       </HorizontalGroup>;
