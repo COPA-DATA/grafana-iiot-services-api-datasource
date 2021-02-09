@@ -1,53 +1,45 @@
-///<reference path="../node_modules/grafana-sdk-mocks/app/headers/common.d.ts" />
 
-import _ from 'lodash';
-import {QueryType} from './constants';
 
-export default class ServiceGridDataSource {
-  id: number;
-  name: string;
+import {
+  DataQueryRequest,
+  DataQueryResponse,
+  DataSourceApi,
+  DataSourceInstanceSettings,
+
+} from '@grafana/data';
+
+import { MyQuery, MyDataSourceOptions, QueryType } from './types';
+
+import { getBackendSrv, getTemplateSrv } from "@grafana/runtime"
+
+export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   url: string;
-  q: any;
-  
-  /** @ngInject */
-  constructor(instanceSettings, $q, private backendSrv, private templateSrv) {
-    this.q = $q;
-    this.name = instanceSettings.name;
-    this.id = instanceSettings.id;
-    this.url = instanceSettings.url;
+
+  constructor(instanceSettings: DataSourceInstanceSettings<MyDataSourceOptions>) {
+    super(instanceSettings);
+    this.url = instanceSettings.url!;
   }
 
-  query(options) {
-    
-    const queries = options.targets.map(item => {
-      if (item.hide)
-      {
-        return '';
-      }
-      
-      return {
-        refId: item.refId,
-        datasourceId: item.datasourceId,
-        archiveId: item.archiveId,
-        variable: item.variable,
-        alias: item.alias,
-        queryType: item.queryType,
-        alarmEventsFilter: item.alarmEventsFilter
-      };
+  async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
+
+    let queries:MyQuery[] = options.targets.filter(item => item.hide!=true);
+    queries.forEach(item => {
+      item.datasourceId = getTemplateSrv().replace(item.datasourceId, options.scopedVars);
+      item.archiveFilter.archiveId = getTemplateSrv().replace(item.archiveFilter.archiveId,options.scopedVars);
+      item.archiveFilter.variable = getTemplateSrv().replace(item.archiveFilter.variable,options.scopedVars);
     });
 
-    let dateFrom = <Date>options.range.from;
-    let dateTo = <Date>options.range.to;
+    let dateFrom:Date = <Date><unknown>options.range.from;
+    let dateTo:Date = <Date><unknown>options.range.to;
 
     if (queries.length === 0) {
       return Promise.resolve({ data: [] });
     }
 
-    
     let requestsVariableValues = queries.filter(q => q.queryType === QueryType.ArchiveData);
     let requestsAlarms = queries.filter(q => q.queryType === QueryType.Alarms);
     let requestsEvents = queries.filter(q => q.queryType === QueryType.Events);
-    
+
     let numberQueryTypes = [{type: QueryType.ArchiveData,value: requestsVariableValues.length},
       {type: QueryType.Alarms, value:requestsAlarms.length},
       {type: QueryType.Events, value:requestsEvents.length}];
@@ -62,16 +54,33 @@ export default class ServiceGridDataSource {
         return this.queryAlarmsEvents(requestsAlarms, dateFrom, dateTo, QueryType.Alarms);
       case QueryType.Events:
         return this.queryAlarmsEvents(requestsEvents, dateFrom, dateTo, QueryType.Events);
-
     }
-
   }
 
-  queryVariableValues(queries:any, dateFrom:Date, dateTo:Date) {
+  async testDatasource() {
 
-    let requests = [];
-    let requestGrouped = {};
-    let variableNameMapping = {};
+    return getBackendSrv().datasourceRequest({
+      url: this.url + "/",
+      method:'GET'
+    }).then((data: any) =>{
+      return Promise.resolve({
+        status: 'success',
+        message: 'Connection test successful',
+      });
+    },(err:any) => {
+      return Promise.resolve({
+        status: 'error',
+        message: 'Error: ' + err.status + ' ' + err.statusText,
+      });
+
+    });
+  }
+
+  queryVariableValues(queries:Array<MyQuery>, dateFrom:Date, dateTo:Date):Promise<DataQueryResponse> {
+
+    let requests:any[] = [];
+    let requestGrouped:any = {};
+    let variableNameMapping:any = {};
     
     if (queries.length === 0) {
       return Promise.resolve({ data: [] });
@@ -80,7 +89,7 @@ export default class ServiceGridDataSource {
     for (let query of queries)
     {
       // ignore query for incomplete definitions
-      if (query.datasourceId === undefined || query.archiveId === undefined || query.variable === undefined)
+      if (!query.datasourceId  || !query.archiveFilter.archiveId  || !query.archiveFilter.variable )
       {
         continue;
       }
@@ -90,14 +99,14 @@ export default class ServiceGridDataSource {
         requestGrouped[query.datasourceId] = {};
       }
 
-      if (query.archiveId in requestGrouped[query.datasourceId] == false)
+      if (query.archiveFilter.archiveId in requestGrouped[query.datasourceId] == false)
       {
-        requestGrouped[query.datasourceId][query.archiveId] = [];
+        requestGrouped[query.datasourceId][query.archiveFilter.archiveId] = [];
       }
 
-      if (requestGrouped[query.datasourceId][query.archiveId].includes(query.variable) == false)
+      if (requestGrouped[query.datasourceId][query.archiveFilter.archiveId].includes(query.archiveFilter.variable) == false)
       {
-        requestGrouped[query.datasourceId][query.archiveId].push(query.variable);
+        requestGrouped[query.datasourceId][query.archiveFilter.archiveId].push(query.archiveFilter.variable);
       }
     
       // fill mapping between variableName and Alias
@@ -107,9 +116,9 @@ export default class ServiceGridDataSource {
         variableNameMapping[query.datasourceId] = {};
       }
 
-      if (query.variable in variableNameMapping[query.datasourceId] == false)
+      if (query.archiveFilter.variable in variableNameMapping[query.datasourceId] == false)
       {
-        variableNameMapping[query.datasourceId][query.variable] = query.alias;
+        variableNameMapping[query.datasourceId][query.archiveFilter.variable] = query.alias;
       }
         
       
@@ -132,7 +141,7 @@ export default class ServiceGridDataSource {
             }
           };
 
-        let request = this.backendSrv.datasourceRequest({
+        let request = getBackendSrv().datasourceRequest({
           url: requestUrl,
           data: requestBody,
           method:'POST'
@@ -205,13 +214,13 @@ export default class ServiceGridDataSource {
     
   }
 
-  queryAlarmsEvents(queries:any, dateFrom:Date, dateTo:Date, queryType:QueryType) {
+  queryAlarmsEvents(queries:Array<MyQuery>, dateFrom:Date, dateTo:Date, queryType:QueryType) {
 
     if (queries.length === 0) {
       return Promise.resolve({ data: [] });
     }
 
-    let requests = [];
+    let requests:any[] = [];
     
     if (queries.length === 0) {
       return Promise.resolve({ data: [] });
@@ -225,7 +234,7 @@ export default class ServiceGridDataSource {
       else if (queryType == QueryType.Events)
         requestUrl = requestUrl + "/events/query";
 
-      let requestBody = {
+      let requestBody:any = {
         timeFilter: {
           from: dateFrom.toISOString(),
           to: dateTo.toISOString(),
@@ -239,27 +248,27 @@ export default class ServiceGridDataSource {
       };
 
       // filtering common for alarms and events
-      if (query.alarmEventsFilter !== undefined)
+      if (query.alarmsEventsFilter !== undefined)
       {
         // overwrite variableNames if set
-        requestBody.variableFilter.variableNames = [query.alarmEventsFilter.variableName || "*"];
+        requestBody.variableFilter.variableNames = [query.alarmsEventsFilter.variable || "*"];
       }
 
       // filtering specific for alarms
-      if (query.alarmEventsFilter !== undefined && queryType == QueryType.Alarms)
+      if (query.alarmsEventsFilter !== undefined && queryType == QueryType.Alarms)
       {
-        let filterFlags = [];
-        if (query.alarmEventsFilter.onlyActive)
+        let filterFlags:any[] = [];
+        if (query.alarmsEventsFilter.onlyActive)
           filterFlags.push("OnlyActive");
-        if (query.alarmEventsFilter.onlyCleared)
+        if (query.alarmsEventsFilter.onlyCleared)
           filterFlags.push("OnlyCleared");
-        if (query.alarmEventsFilter.onlyUnacknowledged)
+        if (query.alarmsEventsFilter.onlyUnacknowledged)
           filterFlags.push("OnlyUnacknowledged");
         if (filterFlags.length > 0)
           requestBody['filterFlags'] = filterFlags;
       }
 
-      let request = this.backendSrv.datasourceRequest({
+      let request = getBackendSrv().datasourceRequest({
         url: requestUrl,
         data: requestBody,
         method:'POST'
@@ -269,7 +278,7 @@ export default class ServiceGridDataSource {
     }
     
     // prepare header for table
-    let alarmEventResults = {
+    let alarmEventResults:any = {
       columns:[
       ],rows:[
       ],type:"table",};
@@ -327,10 +336,11 @@ export default class ServiceGridDataSource {
           continue;
         }
 
-        let itemRows = items.map(a => {
+        let itemRows:any = items.map((a:any) => {
 
           switch(queryType)
           {
+            default:
             case QueryType.Alarms:
               return [
                 Date.parse(a.receivedTime) || null,
@@ -378,16 +388,12 @@ export default class ServiceGridDataSource {
 
   }
 
-  annotationQuery(options) {
-    
-  }
+  findDataSources() {
 
-  findDataSources(query: string) {
-
-    return this.backendSrv.datasourceRequest({
+    return getBackendSrv().datasourceRequest({
       url: this.url + "/api/v1/datasources",
       method:'GET'
-    }).then((res) => {
+    }).then((res:any) => {
 
       let datasources = [];
 
@@ -410,11 +416,11 @@ export default class ServiceGridDataSource {
           throw {data:{message: "Query Error: Unknown/Invalid format"}};
         }
 
-        let dsObj = {"text": ds.name, "value":ds.dataSourceId};
+        let dsObj = {"label": ds.name, "value":ds.dataSourceId};
         datasources.push(dsObj);
       }
       
-      datasources.sort((a,b) => (a.text > b.text) ? 1 : -1);
+      datasources.sort((a,b) => (a.label > b.label) ? 1 : -1);
 
       return Promise.resolve(datasources);
 
@@ -424,14 +430,18 @@ export default class ServiceGridDataSource {
 
   }
 
-  findArchives(datasourceId: string, query: string) {
+  findArchives(datasourceId: string) {
 
-    return this.backendSrv.datasourceRequest({
+    if (datasourceId == undefined || datasourceId == ''){
+      return Promise.resolve([]);
+    }
+
+    return getBackendSrv().datasourceRequest({
       url: this.url + "/api/v1/datasources/" + datasourceId + "/archives",
       method:'GET'
     }).then((res) => {
 
-      let archives = [];
+      let archives:any[] = [];
 
       if (!("archives" in res.data))
       {
@@ -454,7 +464,7 @@ export default class ServiceGridDataSource {
           }
   
           let displayName = (isAggregated ? "- aggregated - " : "") + arch.name;
-          let archObj = {"text": displayName, "value":arch.identification};
+          let archObj = {"label": displayName, "value":arch.identification};
           archives.push(archObj);
 
           if ('aggregatedArchives' in arch)
@@ -468,7 +478,7 @@ export default class ServiceGridDataSource {
       
       // sort archives, ignore prefix "AGGREGATED: "
       archives.sort((a,b) => {
-        return (a.text.replace(/- aggregated - /,'') > b.text.replace(/- aggregated - /,'')) ? 1 : -1;
+        return (a.label.replace(/- aggregated - /,'') > b.label.replace(/- aggregated - /,'')) ? 1 : -1;
       });
 
       return Promise.resolve(archives);
@@ -480,9 +490,14 @@ export default class ServiceGridDataSource {
   }
 
 
-  findVariablesForArchive(datasourceId: string, archiveId: string, query: string) {
+  findVariablesForArchive(datasourceId: string, archiveId: string) {
 
-    return this.backendSrv.datasourceRequest({
+    if (datasourceId == undefined || datasourceId == '' || archiveId == undefined || archiveId ==''){
+      return Promise.resolve([]);
+    }
+
+
+    return getBackendSrv().datasourceRequest({
       url: this.url + "/api/v1/datasources/" + datasourceId + "/archives/" + archiveId,
       method:'GET'
     }).then((res) => {
@@ -499,11 +514,11 @@ export default class ServiceGridDataSource {
         throw {data:{message: "Query Error: Could not parse list of variables"}};
       }
 
-      const variables = responseVariables.map(item => {      
-        return {text: item.variableName, value: item.variableName};
+      const variables = responseVariables.map((item:any) => {      
+        return {label: item.variableName, value: item.variableName};
       });
 
-      variables.sort((a,b) => (a.text > b.text) ? 1 : -1);
+      variables.sort((a:any,b:any) => (a.label > b.label) ? 1 : -1);
 
       return Promise.resolve(variables);
 
@@ -514,12 +529,12 @@ export default class ServiceGridDataSource {
   }
 
 
-  findVariables(datasourceId: string, query: string) {
+  findVariables(datasourceId: string) {
 
     let requestUrl = this.url + "/api/v1/datasources/" + datasourceId + "/variables/query";
     let requestBody = {fields: ["name"],nameFilter:{variableNames:["*"]}};
 
-    return this.backendSrv.datasourceRequest({
+    return getBackendSrv().datasourceRequest({
       url: requestUrl,
       data: requestBody,
       method:'POST'
@@ -530,11 +545,11 @@ export default class ServiceGridDataSource {
         throw {data:{message: "Query Error: Could not parse list of variables"}};
       }
 
-      let variables = res.data.variables.map(v => {
-        return {text: v.name, value: v.name};
+      let variables = res.data.variables.map((v:any) => {
+        return {label: v.name, value: v.name};
       });
 
-      variables.sort((a,b) => (a.text > b.text) ? 1 : -1);
+      variables.sort((a:any,b:any) => (a.label > b.label) ? 1 : -1);
 
       return Promise.resolve(variables);
 
@@ -542,25 +557,6 @@ export default class ServiceGridDataSource {
       return Promise.resolve([]);
     });
 
-  }
-  
-  testDatasource() {
-    
-    return this.backendSrv.datasourceRequest({
-      url: this.url + "/",
-      method:'GET'
-    }).then((data) =>{
-      return Promise.resolve({
-        status: 'success',
-        message: 'Connection test successful',
-      });
-    },(err:any) => {
-      return Promise.resolve({
-        status: 'error',
-        message: 'Error: ' + err.status + ' ' + err.statusText,
-      });
-
-    });
   }
 
   handleHttpErrors(err:any) {
@@ -584,5 +580,7 @@ export default class ServiceGridDataSource {
       message: 'Query Error: Error during requesting data from API'
     }});
   }
+
+
 
 }
