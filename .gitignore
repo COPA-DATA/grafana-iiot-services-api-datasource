@@ -7,6 +7,13 @@ yarn-error.log*
 
 node_modules/
 
+.DS_Store
+.vscode
+.tscache
+.editorconfig
+dist/**/*.ts
+dist/**/*.map
+
 # Runtime data
 pids
 *.pid

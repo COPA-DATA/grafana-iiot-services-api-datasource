@@ -6,11 +6,13 @@ import {
   DataSourceApi,
   DataSourceInstanceSettings,
   FieldType,
+  MetricFindValue,
   MutableDataFrame,
+  ScopedVars,
 
 } from '@grafana/data';
 
-import { MyQuery, MyDataSourceOptions, QueryType } from './types';
+import { MyQuery, MyDataSourceOptions, QueryType, MyVariableQuery, VariableQueryType } from './types';
 
 import { getBackendSrv, getTemplateSrv } from "@grafana/runtime"
 
@@ -26,9 +28,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
     let queries: MyQuery[] = options.targets.filter(item => item.hide != true);
     queries.forEach(item => {
-      item.datasourceId = getTemplateSrv().replace(item.datasourceId, options.scopedVars);
-      item.archiveFilter.archiveId = getTemplateSrv().replace(item.archiveFilter.archiveId, options.scopedVars);
-      item.archiveFilter.variable = getTemplateSrv().replace(item.archiveFilter.variable, options.scopedVars);
+      item = this.replaceTemplateVariables(item, options.scopedVars);
     });
 
     let dateFrom: Date = <Date><unknown>options.range.from;
@@ -42,17 +42,20 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
     for (let query of queries) {
       // is query valid?
-      if (!query.datasourceId || (query.queryType==QueryType.ArchiveData && (!query.archiveFilter.archiveId || !query.archiveFilter.variable)))
+      if (!query.datasourceId || (query.queryType==QueryType.ArchiveData && (!query.archiveFilter.archiveId || query.archiveFilter.variables.length==0)))
       {
         continue;
       }
       switch (query.queryType) {
         case QueryType.ArchiveData:
-          runningQueries.push(this.queryVariableValues(query, dateFrom, dateTo));
+          runningQueries.push(this.queryArchiveValues(query, dateFrom, dateTo));
           break;
         case QueryType.Alarms:
         case QueryType.Events:
           runningQueries.push(this.queryAlarmsEvents(query, dateFrom, dateTo))
+          break;
+        case QueryType.VariableValues:
+          runningQueries.push(this.queryOnlineValues(query));
       }
     }
 
@@ -60,6 +63,88 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
       return Promise.resolve({data:dataFrames.flat()})
     })
+  }
+
+  replaceTemplateVariables(query:MyQuery, scopedVars:ScopedVars) : MyQuery
+  {
+    query.datasourceId = getTemplateSrv().replace(query.datasourceId, scopedVars);
+    query.archiveFilter.archiveId = getTemplateSrv().replace(query.archiveFilter.archiveId, scopedVars);
+
+    const expandTemplateVars = (array:string[]): string[] =>{
+      let result : string[] = [];
+      for (let v of array)
+      {
+        let value = getTemplateSrv().replace(v, scopedVars);
+        // is this a multi-value variable
+        if (value.substr(0,2) == '["')
+        {
+          result = result.concat(JSON.parse(value));
+        }
+        else
+        {
+            result.push(value.replace(/['"]+/g, ''));
+        }
+      }
+      return result;
+    }
+    
+    query.archiveFilter.variables=expandTemplateVars(query.archiveFilter.variables);
+    query.alarmsEventsFilter.variables=expandTemplateVars(query.alarmsEventsFilter.variables);
+    query.variableFilter.variables=expandTemplateVars(query.variableFilter.variables);
+    return query;
+  }
+
+  async metricFindQuery(query: MyVariableQuery, options?: any) : Promise<MetricFindValue[]>{
+    
+    // Currently grafana does not support filtering variables by their labels.
+    // Since this is an important usecase for us, we will (for now) not use the
+    // 'label' property of MetricFindValue.
+    // Instead we return a string in the 'text' property in the form <DisplayName> | <value>
+    // That way we can use regex capture groups in grafanas filter to create label and text props
+    // Example: Catch only projects that start with "FNB": (?<text>FNB.+) \| (?<value>[\da-z\-]+)
+    switch(query.queryType)
+    {
+      case VariableQueryType.Datasources:
+        return this.findDataSources().then((ds) => {
+          let items = [];
+          for (let d of ds){
+            //items.push({text:d.label,value:d.value})
+            items.push({text: d.label + ' | '+ d.value})
+          }
+          return Promise.resolve(items);
+        });
+      break;
+      case VariableQueryType.ArchivesForDatasource:
+        return this.findArchives(query.datasourceId!).then((ars) => {
+          let items = [];
+          for (let d of ars){
+            //items.push({text:d.label,value:d.value})
+            items.push({text: d.label + ' | '+ d.value})
+          }
+          return Promise.resolve(items);
+        });
+      break;
+      case VariableQueryType.VariablesForArchive:
+        return this.findVariablesForArchive(query.datasourceId!,query.archiveId!).then((vars) => {
+          let items = [];
+          for (let d of vars){
+            //items.push({text:d.label,value:d.value})
+            items.push({text: d.label + ' | '+ d.value})
+          }
+          return Promise.resolve(items);
+        });
+        break;
+        case VariableQueryType.VariablesForDatasource:
+        return this.findVariables(query.datasourceId!).then((vars) => {
+          let items = [];
+          for (let d of vars){
+            //items.push({text:d.label,value:d.value})
+            items.push({text: d.label + ' | '+ d.value})
+          }
+          return Promise.resolve(items);
+        });
+        break;
+    }
   }
 
   async testDatasource() {
@@ -81,12 +166,10 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     });
   }
 
-  queryVariableValues(query: MyQuery, dateFrom: Date, dateTo: Date): Promise<MutableDataFrame[]> {
-
-
+  queryArchiveValues(query: MyQuery, dateFrom: Date, dateTo: Date): Promise<MutableDataFrame[]> {
 
     let requestUrl = this.url + "/api/v1/datasources/" + query.datasourceId + "/archives/" + query.archiveFilter.archiveId + "/query";
-    let variableList = [query.archiveFilter.variable];
+    let variableList = query.archiveFilter.variables;
 
     let requestBody = {
       variableFilter: {
@@ -148,6 +231,57 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
   }
 
+  queryOnlineValues(query: MyQuery): Promise<MutableDataFrame[]> {
+
+    let requestUrl = this.url + "/api/v1/datasources/" + query.datasourceId + "/variables/query";
+    let variableList = query.variableFilter.variables;
+
+    let requestBody = {
+      nameFilter: {
+        variableNames: variableList
+      },
+      fields: ["name","value","lastUpdateTime"]
+    };
+
+    return getBackendSrv().datasourceRequest({
+      url: requestUrl,
+      data: requestBody,
+      method: 'POST'
+    }).then((response) => {
+
+      if (!('data' in response) || !('variables' in response.data)) {
+        throw { data: { message: 'Query Error: Retrieved data has invalid format' } };
+      }
+
+      let variables = response.data.variables;
+      
+      let dataFrames = []
+
+      // iterate through all variable entires of this response
+      for (let variableEntry of variables) {
+
+        const dataFrame = new MutableDataFrame({
+          refId: query.refId,
+          fields: [
+            { name: variableEntry.name, type: FieldType.number},
+            { name: 'time', type: FieldType.time }
+          ],
+        });
+
+        dataFrame.add({
+          time: variableEntry.lastUpdateTime,
+          [variableEntry.name]: variableEntry.value
+        });
+
+        dataFrames.push(dataFrame);
+      }
+
+      return Promise.resolve(dataFrames);
+
+    }, this.handleHttpErrors).catch(this.handleQueryException);
+
+  }
+
   queryAlarmsEvents(query: MyQuery, dateFrom: Date, dateTo: Date) : Promise<MutableDataFrame[]> {
 
     let requestUrl = this.url + "/api/v1/datasources/" + query.datasourceId;
@@ -163,16 +297,10 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         type: "Absolute"
       },
       variableFilter: {
-        variableNames: [
-          "*"
-        ]
+        variableNames: query.alarmsEventsFilter.variables
       }
     }
-    // filtering common for alarms and events
-    if (query.alarmsEventsFilter.variable !== undefined) {
-      // overwrite variableNames if set
-      requestBody.variableFilter.variableNames = [query.alarmsEventsFilter.variable || "*"];
-    }
+    
 
     // filtering specific for alarms
     if (query.alarmsEventsFilter !== undefined && query.queryType == QueryType.Alarms) {
@@ -285,7 +413,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
   }
 
-  findDataSources() {
+  findDataSources(onlyOnline:boolean=true) : Promise<{label:string,value:string}[]> {
 
     return getBackendSrv().datasourceRequest({
       url: this.url + "/api/v1/datasources",
@@ -305,29 +433,32 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       }
 
       for (let ds of responseDataSources) {
-        if (!('dataSourceId' in ds) || !('name' in ds)) {
+        if (!('dataSourceId' in ds) || !('name' in ds) || !('state' in ds)) {
           throw { data: { message: "Query Error: Unknown/Invalid format" } };
         }
 
-        let dsObj = { "label": ds.name, "value": ds.dataSourceId };
-        datasources.push(dsObj);
+        if ( ds.state == "Online" || !onlyOnline)
+        {
+          let dsObj = { "label": ds.name, "value": ds.dataSourceId };
+          datasources.push(dsObj);  
+        }
       }
 
       datasources.sort((a, b) => (a.label > b.label) ? 1 : -1);
 
       return Promise.resolve(datasources);
 
-    }, (err: any) => {
-      return Promise.resolve([]);
-    });
+    }, this.handleHttpErrors).catch(this.handleQueryException);
 
   }
 
-  findArchives(datasourceId: string) {
+  findArchives(datasourceId: string) : Promise<{label:string,value:string}[]> {
 
     if (datasourceId == undefined || datasourceId == '') {
       return Promise.resolve([]);
     }
+
+    datasourceId = getTemplateSrv().replace(datasourceId);
 
     return getBackendSrv().datasourceRequest({
       url: this.url + "/api/v1/datasources/" + datasourceId + "/archives",
@@ -371,18 +502,21 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
       return Promise.resolve(archives);
 
-    }, (err: any) => {
+    },(err:any) => {
       return Promise.resolve([]);
     });
 
   }
 
 
-  findVariablesForArchive(datasourceId: string, archiveId: string) {
+  findVariablesForArchive(datasourceId: string, archiveId: string) : Promise<{label:string,value:string}[]> {
 
     if (datasourceId == undefined || datasourceId == '' || archiveId == undefined || archiveId == '') {
       return Promise.resolve([]);
     }
+
+    datasourceId = getTemplateSrv().replace(datasourceId);
+    archiveId = getTemplateSrv().replace(archiveId);
 
 
     return getBackendSrv().datasourceRequest({
@@ -408,14 +542,18 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
       return Promise.resolve(variables);
 
-    }, (err: any) => {
-      return Promise.resolve([]);
-    });
+    }, this.handleHttpErrors).catch(this.handleQueryException);
 
   }
 
 
-  findVariables(datasourceId: string) {
+  findVariables(datasourceId: string) : Promise<{label:string,value:string}[]>{
+
+    if (datasourceId == undefined || datasourceId == '') {
+      return Promise.resolve([]);
+    }
+
+    datasourceId = getTemplateSrv().replace(datasourceId);
 
     let requestUrl = this.url + "/api/v1/datasources/" + datasourceId + "/variables/query";
     let requestBody = { fields: ["name"], nameFilter: { variableNames: ["*"] } };
@@ -438,9 +576,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
       return Promise.resolve(variables);
 
-    }, (err: any) => {
-      return Promise.resolve([]);
-    });
+    }, this.handleHttpErrors).catch(this.handleQueryException);
 
   }
 
@@ -449,6 +585,8 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     if (err.status === 401) {
       err.message = "Authorization Error: " + err.status + " Unauthorized";
     }
+
+    throw new Error(err.message);
 
     return Promise.reject(err);
   }

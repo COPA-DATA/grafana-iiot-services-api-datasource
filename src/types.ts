@@ -2,33 +2,52 @@ import { DataQuery, DataSourceJsonData } from '@grafana/data';
 
 export enum QueryType {
   ArchiveData = "archiveData",
+  VariableValues = "variableValues",
   Alarms = "alarms",
   Events = "events"
-}
+};
+
+export enum VariableQueryType {
+  Datasources = "Datasources",
+  ArchivesForDatasource = "ArchivesForDataSource",
+  VariablesForArchive = "VariablesForArchive",
+  VariablesForDatasource = "VariablesForDatasource"
+};
+
 
 export interface MyQuery extends DataQuery {
   datasourceId: string;
   queryType: QueryType;
-  alarmsEventsFilter:{variable?:string, onlyActive:boolean, onlyCleared:boolean, onlyUnacknowledged:boolean}
-  archiveFilter:{archiveId?:string, variable?:string}
-}
+  alarmsEventsFilter:{variables:string[], onlyActive:boolean, onlyCleared:boolean, onlyUnacknowledged:boolean}
+  archiveFilter:{archiveId?:string, variables:string[]}
+  variableFilter:{variables:string[]}
+};
 
 export const defaultQuery: Partial<MyQuery> = {
   queryType:QueryType.ArchiveData,
-  alarmsEventsFilter:{variable:'*', onlyActive:false,onlyCleared:false, onlyUnacknowledged:false},
-  archiveFilter:{}
+  alarmsEventsFilter:{variables:['*'], onlyActive:false,onlyCleared:false, onlyUnacknowledged:false},
+  archiveFilter:{variables:[]},
+  variableFilter:{variables:[]}
 };
 
-/**
- * These are options configured for each DataSource instance
- */
-export interface MyDataSourceOptions extends DataSourceJsonData {
-  apiUrl?: string;
+export interface MyVariableQuery {
+  queryType: VariableQueryType;
+  datasourceId?: string;
+  archiveId?: string;
 }
 
-/**
- * Value that is used in the backend, but never sent over HTTP to the frontend
- */
-export interface MySecureJsonData {
-  
-}
+export const defaultVariableQuery: Partial<MyVariableQuery> = {
+  queryType:VariableQueryType.Datasources
+};
+
+
+
+export interface MyDataSourceOptions extends DataSourceJsonData {
+};
+
+
+
+
+
+
+
