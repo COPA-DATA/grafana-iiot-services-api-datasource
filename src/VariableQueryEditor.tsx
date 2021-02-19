@@ -3,32 +3,32 @@ import { SelectableValue } from '@grafana/data';
 import { Label, Select, AsyncSelect } from '@grafana/ui';
 import { defaults } from 'lodash';
 import React, { Component } from 'react';
-import { MyVariableQuery, VariableQueryType, defaultVariableQuery } from './types';
+import { TemplateVariableQuery, TemplateVariableQueryType, defaultVariableQuery } from './types';
 import { DataSource } from './DataSource';
 
-interface VariableQueryProps {
-  query: MyVariableQuery;
-  onChange: (query: MyVariableQuery, definition: string) => void;
+interface TemplateVariableQueryProps {
+  query: TemplateVariableQuery;
+  onChange: (query: TemplateVariableQuery, definition: string) => void;
   datasource: DataSource;
 }
 
 type State = {
   datasourceSelectables: Array<SelectableValue<string>>,
-  queryTypeSelectables: Array<SelectableValue<VariableQueryType>>,
+  queryTypeSelectables: Array<SelectableValue<TemplateVariableQueryType>>,
   archiveSelectables: Array<SelectableValue<string>>,
   archiveVariableSelectables: Array<SelectableValue<string>>
 }
 
-export class VariableQueryEditor extends Component<VariableQueryProps, State> {
+export class VariableQueryEditor extends Component<TemplateVariableQueryProps, State> {
 
-  constructor(props: Readonly<VariableQueryProps>) {
+  constructor(props: Readonly<TemplateVariableQueryProps>) {
     super(props);
 
     const queryTypeSelectables = [
-      { label: 'Datasources', value: VariableQueryType.Datasources },
-      { label: 'Archives for datasource', value: VariableQueryType.ArchivesForDatasource },
-      { label: 'Variables for datasource', value: VariableQueryType.VariablesForDatasource },
-      { label: 'Variables for archive', value: VariableQueryType.VariablesForArchive },
+      { label: 'Datasources', value: TemplateVariableQueryType.Datasources },
+      { label: 'Archives for datasource', value: TemplateVariableQueryType.ArchivesForDatasource },
+      { label: 'Variables for datasource', value: TemplateVariableQueryType.VariablesForDatasource },
+      { label: 'Variables for archive', value: TemplateVariableQueryType.VariablesForArchive },
     ]
 
     this.state = {
@@ -58,7 +58,6 @@ export class VariableQueryEditor extends Component<VariableQueryProps, State> {
       })
     })
   }
-
 
   render() {
     const query = defaults(this.props.query, defaultVariableQuery);
@@ -109,8 +108,8 @@ export class VariableQueryEditor extends Component<VariableQueryProps, State> {
               />
             </div>
           </div>
-          {query.queryType != VariableQueryType.Datasources && datasourceSelect}
-          {query.queryType == VariableQueryType.VariablesForArchive && archiveSelect}
+          {query.queryType != TemplateVariableQueryType.Datasources && datasourceSelect}
+          {query.queryType == TemplateVariableQueryType.VariablesForArchive && archiveSelect}
         </div>
       </div>
     );

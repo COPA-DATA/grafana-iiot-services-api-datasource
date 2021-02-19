@@ -5,15 +5,14 @@ import React, { Component } from 'react';
 import { AsyncMultiSelect, AsyncSelect, Field, Label, Select, Switch } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from './DataSource';
-import { defaultQuery, MyDataSourceOptions, MyQuery, QueryType, VariableQueryType } from './types';
+import { defaultQuery, SGApiDataSourceOptions, DataSourceQuery, DataSourceQueryType, TemplateVariableQueryType } from './types';
 import { getTemplateSrv } from "@grafana/runtime"
 import { } from '@emotion/core';  // see https://github.com/grafana/grafana/issues/26512
 
-
-type Props = QueryEditorProps<DataSource, MyQuery, MyDataSourceOptions>;
+type Props = QueryEditorProps<DataSource, DataSourceQuery, SGApiDataSourceOptions>;
 type State = {
   datasourceSelectables: Array<SelectableValue<string>>,
-  queryTypeSelectables: Array<SelectableValue<QueryType>>,
+  queryTypeSelectables: Array<SelectableValue<DataSourceQueryType>>,
   archiveSelectables: Array<SelectableValue<string>>,
   archiveVariableSelectables: Array<SelectableValue<string>>
   variableSelectables: Array<SelectableValue<string>>,
@@ -24,11 +23,10 @@ export class QueryEditor extends Component<Props, State> {
   constructor(props: Readonly<Props>) {
     super(props);
 
-    let archives: SelectableValue<QueryType> = { label: 'Archive Data', value: QueryType.ArchiveData };
-    let values: SelectableValue<QueryType> = { label: 'Online Values', value: QueryType.VariableValues };
-    let alarms: SelectableValue<QueryType> = { label: 'Alarms', value: QueryType.Alarms };
-    let events: SelectableValue<QueryType> = { label: 'Events', value: QueryType.Events };
-
+    let archives: SelectableValue<DataSourceQueryType> = { label: 'Archive Data', value: DataSourceQueryType.ArchiveData };
+    let values: SelectableValue<DataSourceQueryType> = { label: 'Online Values', value: DataSourceQueryType.VariableValues };
+    let alarms: SelectableValue<DataSourceQueryType> = { label: 'Alarms', value: DataSourceQueryType.Alarms };
+    let events: SelectableValue<DataSourceQueryType> = { label: 'Events', value: DataSourceQueryType.Events };
 
     this.state = {
       datasourceSelectables: [],
@@ -40,7 +38,7 @@ export class QueryEditor extends Component<Props, State> {
 
   }
 
-  getTemplateVariables = (queryType: VariableQueryType) => {
+  getTemplateVariables = (queryType: TemplateVariableQueryType) => {
     const templateSrv = getTemplateSrv();
     const variablesProtected = templateSrv.getVariables();
     const variablesStringfied = JSON.stringify(variablesProtected);
@@ -58,7 +56,7 @@ export class QueryEditor extends Component<Props, State> {
     const { datasource } = this.props;
     datasource.findDataSources().then(ds => {
       // add potential datasource query variables to the list
-      let vars = this.getTemplateVariables(VariableQueryType.Datasources);
+      let vars = this.getTemplateVariables(TemplateVariableQueryType.Datasources);
       for (let v of vars) {
         ds.unshift({ label: '$' + v.name, value: '$' + v.name })
       }
@@ -71,7 +69,7 @@ export class QueryEditor extends Component<Props, State> {
     return new Promise(resolve => {
       datasource.findArchives(query.datasourceId).then(ars => {
         // add potential datasource query variables to the list
-        let vars = this.getTemplateVariables(VariableQueryType.ArchivesForDatasource);
+        let vars = this.getTemplateVariables(TemplateVariableQueryType.ArchivesForDatasource);
         for (let v of vars) {
           ars.unshift({ label: '$' + v.name, value: '$' + v.name })
         }
@@ -86,7 +84,7 @@ export class QueryEditor extends Component<Props, State> {
     return new Promise(resolve => {
       datasource.findVariablesForArchive(query.datasourceId, query.archiveFilter.archiveId!).then(vars => {
         // add potential datasource query variables to the list
-        let templateVars = this.getTemplateVariables(VariableQueryType.VariablesForArchive);
+        let templateVars = this.getTemplateVariables(TemplateVariableQueryType.VariablesForArchive);
         for (let v of templateVars) {
           vars.unshift({ label: '$' + v.name, value: '${' + v.name + ':json}' })
         }
@@ -101,7 +99,7 @@ export class QueryEditor extends Component<Props, State> {
     return new Promise(resolve => {
       datasource.findVariables(query.datasourceId).then(vars => {
         // add potential datasource query variables to the list
-        let templateVars = this.getTemplateVariables(VariableQueryType.VariablesForDatasource);
+        let templateVars = this.getTemplateVariables(TemplateVariableQueryType.VariablesForDatasource);
         for (let v of templateVars) {
           vars.unshift({ label: '$' + v.name, value: '${' + v.name + ':json}' })
         }
@@ -214,7 +212,6 @@ export class QueryEditor extends Component<Props, State> {
         </div>
       </div>;
 
-    
     const variableValuesFilterContent = 
     <div className="gf-form-inline">
     <div className="gf-form">
@@ -230,19 +227,18 @@ export class QueryEditor extends Component<Props, State> {
     </div>
   </div>;
 
-
     let filter;
     switch (query.queryType) {
-      case QueryType.ArchiveData:
+      case DataSourceQueryType.ArchiveData:
         filter = archiveFilterContent;
         break;
-      case QueryType.Alarms:
+      case DataSourceQueryType.Alarms:
         filter = alarmsFilterContent;
         break;
-      case QueryType.Events:
+      case DataSourceQueryType.Events:
         filter = eventsFilterContent;
         break;
-      case QueryType.VariableValues:
+      case DataSourceQueryType.VariableValues:
           filter = variableValuesFilterContent;
           break;
     }

@@ -32,28 +32,29 @@ See https://grafana.com/docs/plugins/installation/ for reference
 ## Configuration
 
 Prior to using the Service Grid Datasource, the following things need to be configured:
-- OAuth2 client definition for Grafana using Service Grid Configuration Backend
+- OAuth2 client definition for Grafana using Service Grid Identity Management
 - OAuth2 configuration for Grafana
 - Datasource configuration
 
-### Configure Grafana OAuth2 client using Configuration Backend
+### Configure Grafana OAuth2 client using Identity Management
 
-In order that Grafana may use the Service Grid Identity Service for user authentication, a client definition needs to be setup using the Configuration Backend.
+In order that Grafana can use the Service Grid Identity Service for user authentication, a client definition needs to be setup using the Identity Management.
 For this client configuration, it is important to set the correct client id, redirect uri and scopes for Grafana. The client secret, which is required for `custom.ini` is generated during this configuration step.
 
 See the following table for reference:
 
 | Field | Value | Note (or reference to `custom.ini`) |
 | - | - | - |
-| Application ID | grafana | arbitrary client id, must be the same as `client_id` |
-| Application Name | Grafana | arbitrary name |
-| Redirect URIs | https://\<grafana-uri\>:\<grafana-port\>/login/generic_oauth | see https://grafana.com/docs/auth/generic-oauth/ for reference |
+| Client ID | grafana | arbitrary client id, must be the same as `client_id` |
+| Client name | Grafana | arbitrary name |
+| Redirect URLs | https://\<grafana-uri\>:\<grafana-port\>/login/generic_oauth | see https://grafana.com/docs/auth/generic-oauth/ for reference |
 | Allowed scopes | openid profile serviceGridAPI.full_access offline_access email | the same as in `scopes` |
 | Grant types | Code | required by Grafana |
-| Secret | generated value | must be copied to `client_secret` |
 | Allow access tokens via browser | checked | required to pass OAuth tokens via browser requests |
+| Secret | generated value | must be copied to `client_secret` |
 
-For additional information on the Configuration Backend, please refer to the Service Grid manual.
+
+For additional information on the Identity Management, please refer to the Service Grid manual.
 
 ### Configure Grafana for OAuth2 Authentication
 
@@ -181,7 +182,7 @@ You can use Grafanas regex filtering capabilities to not only filter those value
         "request": "launch",
         "name": "Launch Chrome against localhost",
         "url": "https://localhost:3000/",
-        "webRoot": "${workspaceFolder}/dist",
+        "webRoot": "${workspaceFolder}/src",
         "smartStep": true
       }]
     }
@@ -191,20 +192,17 @@ You can use Grafanas regex filtering capabilities to not only filter those value
 # Troubleshooting
 
 ## Why are there no Datasources listed in the dropdown?
-Make sure that the user, which is trying to request data from the Service Grid API, has sufficient permissions and is assigned to the desired datasources in the Configuration Backend.
+Make sure that the user, which is trying to request data from the Service Grid API, has sufficient permissions and is assigned to the desired datasources in the Identity Management.
 Try to perform requests using the Service Grid API's Swagger UI client, to eliminate any configuration mistakes for the Service Grid Datasource plugin.
 
 ## Why am I not able to connect to grafana even if it is started?
 Make sure that the used port (default: *3000*) is available and not used by any other services.
 
 ## The Datasource does show errors when requesting data and the last log in was approx. 1 hour ago.
-Check in the Configuration Backend if the Grafana client definition includes the scope `offline_access` and it is allowed to use refresh tokens. Also Grafana's configuration file must include the scope `offline_access`.
+Check in the Identity Management if the Grafana client definition includes the scope `offline_access` and it is allowed to use refresh tokens. Also Grafana's configuration file must include the scope `offline_access`.
 
 ## Timestamps of Alarms and Events are displayed as numbers (e.g. *'1.57 Tri'*)
 Timestamps of alarm and event entries are encoded as UNIX timestamps. Using the table panel requires to specify column styles, which format those timestamps in the desired date format.
 The format `/.\*Time\*/` allows all relevant columns to be formated as date time.
 
 ![](./doc/timestamp-format.png)
-
-## Logging in to Grafana using OAuth does not work for users of the zenon RT
-When using the zenon RT authentication as Identity Provider for the Identity Serivce, make sure to enable the message control option for the desired user and provide a email address. This is necessary in order that zenon users can be used to login to Grafana using the Identity Service.
