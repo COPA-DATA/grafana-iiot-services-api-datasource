@@ -1,31 +1,30 @@
 {
-  "type": "datasource",
-  "name": "Service Grid Datasource",
-  "id": "copadata-servicegrid-datasource",
-
-  "info": {
-    "description": "Datasource for requesting data from Service Grid API",
-    "author": {
-      "name": "Ing. Punzenberger COPA-DATA GmbH",
-      "url": "www.copadata.com"
+    "type": "datasource",
+    "name": "Service Grid Datasource",
+    "id": "copadata-servicegrid-datasource",
+    "metrics": true,
+    "info": {
+        "description": "Datasource for requesting data from Service Grid API",
+        "author": {
+            "name": "Ing. Punzenberger COPA-DATA GmbH",
+            "url": "www.copadata.com"
+        },
+        "keywords": [
+            "service grid",
+            "copadata",
+            "copa data"
+        ],
+        "logos": {
+            "small": "img/cd-logo.png",
+            "large": "img/cd-logo.png"
+        },
+        "links": [{ "name": "Project site", "url": "https://github.com/COPA-DATA/grafana-service-grid-api-datasource" }],
+        "screenshots": [],
+        "version": "1.1.0",
+        "updated": "2021-02-22"
     },
-    "keywords": ["service grid", "copadata", "copa data"],
-    "logos": {
-      "small": "img/cd-logo.png",
-      "large": "img/cd-logo.png"
-    },
-    "links": [
-      {"name": "Project site", "url": "https://github.com/COPA-DATA/grafana-service-grid-api-datasource"}
-    ],
-    "version": "1.0.1",
-    "updated": "2020-09-07"
-  },
-
-  "dependencies": {
-    "grafanaVersion": "6.3.3",
-    "plugins": [ ]
-  },
-
-  "metrics": true,
-  "annotations": false
+    "dependencies": {
+        "grafanaVersion": "7.0.x",
+        "plugins": []
+    }
 }
