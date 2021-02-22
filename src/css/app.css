@@ -1,0 +1,22 @@
+.min-width-10 {
+    min-width: 10rem;
+}
+
+.min-width-12 {
+    min-width: 12rem;
+}
+
+.min-width-20 {
+    min-width: 20rem;
+}
+
+.margin-1 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.center {
+    margin-top: 0.5rem;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+}
