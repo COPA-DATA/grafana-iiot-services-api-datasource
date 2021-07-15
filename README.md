@@ -109,6 +109,8 @@ This is done by checking the option "Forward OAuth Identity" in the Datasource c
 
 ## Using the Datasource to query data
 
+**Important:** Make sure to login via the Identity Service in order to be able to use the Grafana datasource and request data via the Service Grid API.
+
 To create data queries, this datasource provides a query editor with the following options:
 
 | Option | Description | Note |
@@ -200,6 +202,9 @@ Make sure that the used port (default: *3000*) is available and not used by any 
 
 ## The Datasource does show errors when requesting data and the last log in was approx. 1 hour ago.
 Check in the Identity Management if the Grafana client definition includes the scope `offline_access` and it is allowed to use refresh tokens. Also Grafana's configuration file must include the scope `offline_access`.
+
+## The datasource cannot retrieve data from the Service Grid API.
+Make sure to log in at Grafana via the Identity Service. This is required to retrieve a valid OAuth2 access token for requesting data from the Serivce Grid API.
 
 ## Timestamps of Alarms and Events are displayed as numbers (e.g. *'1.57 Tri'*)
 Timestamps of alarm and event entries are encoded as UNIX timestamps. Using the table panel requires to specify column styles, which format those timestamps in the desired date format.
