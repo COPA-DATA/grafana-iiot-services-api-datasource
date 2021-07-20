@@ -48,7 +48,7 @@ See the following table for reference:
 | Client ID | grafana | arbitrary client id, must be the same as `client_id` |
 | Client name | Grafana | arbitrary name |
 | Redirect URLs | https://\<grafana-uri\>:\<grafana-port\>/login/generic_oauth | see https://grafana.com/docs/auth/generic-oauth/ for reference |
-| Allowed scopes | openid profile serviceGridAPI.full_access offline_access email | the same as in `scopes` |
+| Allowed scopes | openid profile serviceGridAPI offline_access email | the same as in `scopes` |
 | Grant types | Code | required by Grafana |
 | Allow access tokens via browser | checked | required to pass OAuth tokens via browser requests |
 | Secret | generated value | must be copied to `client_secret` |
