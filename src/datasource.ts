@@ -10,16 +10,18 @@ import {
 
 } from '@grafana/data';
 
-import { DataSourceQuery, SGApiDataSourceOptions, DataSourceQueryType, TemplateVariableQuery, TemplateVariableQueryType } from './types';
+import { DataSourceQuery, SGApiDataSourceOptions, DataSourceQueryType, TemplateVariableQuery, TemplateVariableQueryType, DataOrigin } from './types';
 
 import { getBackendSrv, getTemplateSrv } from "@grafana/runtime"
 
 export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOptions> {
   url: string;
+  showOfflineDatasources: boolean;
 
   constructor(instanceSettings: DataSourceInstanceSettings<SGApiDataSourceOptions>) {
     super(instanceSettings);
     this.url = instanceSettings.url!;
+    this.showOfflineDatasources = instanceSettings.jsonData.showOfflineDatasources || false;
   }
 
   async query(options: DataQueryRequest<DataSourceQuery>): Promise<DataQueryResponse> {
@@ -166,18 +168,18 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
 
   queryArchiveValues(query: DataSourceQuery, dateFrom: Date, dateTo: Date): Promise<MutableDataFrame[]> {
 
-    let requestUrl = this.url + "/api/v1/datasources/" + query.datasourceId + "/archives/" + query.archiveFilter.archiveId + "/query";
+    let requestUrl = this.url + "/api/v2/datasources/" + query.datasourceId + "/archives/" + query.archiveFilter.archiveId + "/query";
     let variableList = query.archiveFilter.variables;
-
     let requestBody = {
       variableFilter: {
-        variablenames: variableList
+        variableNames: variableList
       },
       timeFilter: {
         from: dateFrom.toISOString(),
         to: dateTo.toISOString(),
         type: "Absolute"
-      }
+      },
+      origin: query.archiveFilter.origin
     };
 
     return getBackendSrv().datasourceRequest({
@@ -194,7 +196,7 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
 
       let dataFrames = []
 
-      // iterate through all variable entires of this response
+      // iterate through all variable entries of this response
       for (let variableEntry of variables) {
 
         const dataFrame = new MutableDataFrame({
@@ -255,7 +257,7 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
       
       let dataFrames = []
 
-      // iterate through all variable entires of this response
+      // iterate through all variable entries of this response
       for (let variableEntry of variables) {
 
         const dataFrame = new MutableDataFrame({
@@ -408,35 +410,39 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
 
   }
 
-  findDataSources(onlyOnline:boolean=true) : Promise<{label:string,value:string}[]> {
+  findDataSources() : Promise<{label:string,value:string}[]> {
 
     return getBackendSrv().datasourceRequest({
-      url: this.url + "/api/v1/datasources",
+      url: this.url + "/api/v2/datasources",
       method: 'GET'
     }).then((res: any) => {
 
       let datasources = [];
 
-      if (!("dataSources" in res.data)) {
+      if (!("dataSourcesOrigin" in res.data)) {
         throw { data: { message: "Query Error: Could not parse list of data sources" } };
       }
 
-      let responseDataSources = res.data.dataSources;
+      let responseDataSources = res.data.dataSourcesOrigin;
 
       if (responseDataSources === undefined || responseDataSources instanceof Array == false) {
         throw { data: { message: "Query Error: Could not parse list of data sources" } };
       }
 
       for (let ds of responseDataSources) {
-        if (!('dataSourceId' in ds) || !('name' in ds) || !('state' in ds)) {
+        if (!('dataSourceId' in ds) || !('name' in ds) || !('dataOrigin' in ds)) {
           throw { data: { message: "Query Error: Unknown/Invalid format" } };
         }
 
-        if ( ds.state == "Online" || !onlyOnline)
-        {
-          let dsObj = { "label": ds.name, "value": ds.dataSourceId };
-          datasources.push(dsObj);  
+        // ignore datasources where none of the data origins (Data Storage or Serivce Engine) is currently available
+        // only do so if the respective datasource wide setting is not configured
+        let dataOrigins = ds.dataOrigin as [{type: string, state: string}];
+        if (dataOrigins.filter(d => d.state == "Available").length == 0 && !this.showOfflineDatasources) {
+          continue;
         }
+
+        let dsObj = { "label": ds.name, "value": ds.dataSourceId };
+        datasources.push(dsObj);
       }
 
       datasources.sort((a, b) => (a.label > b.label) ? 1 : -1);
@@ -447,7 +453,7 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
 
   }
 
-  findArchives(datasourceId: string) : Promise<{label:string,value:string}[]> {
+  findArchives(datasourceId: string, dataorigin: DataOrigin = DataOrigin.DataStorage) : Promise<{label:string,value:string}[]> {
 
     if (datasourceId == undefined || datasourceId == '') {
       return Promise.resolve([]);
@@ -456,7 +462,7 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
     datasourceId = getTemplateSrv().replace(datasourceId);
 
     return getBackendSrv().datasourceRequest({
-      url: this.url + "/api/v1/datasources/" + datasourceId + "/archives",
+      url: this.url + "/api/v2/datasources/" + datasourceId + "/archives",
       method: 'GET'
     }).then((res) => {
 
@@ -480,7 +486,12 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
 
           let displayName = (isAggregated ? "- aggregated - " : "") + arch.name;
           let archObj = { "label": displayName, "value": arch.identification };
-          archives.push(archObj);
+          
+          // only include the archive in the list, if it is available in the selected data origin
+          if ((<string[]>arch.dataOrigin).indexOf(dataorigin) != -1)
+          {
+            archives.push(archObj);
+          }
 
           if ('aggregatedArchives' in arch) {
             extractArchives(arch.aggregatedArchives, true);
@@ -513,7 +524,7 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
     archiveId = getTemplateSrv().replace(archiveId);
 
     return getBackendSrv().datasourceRequest({
-      url: this.url + "/api/v1/datasources/" + datasourceId + "/archives/" + archiveId,
+      url: this.url + "/api/v2/datasources/" + datasourceId + "/archives/" + archiveId,
       method: 'GET'
     }).then((res) => {
 
@@ -587,7 +598,7 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
       }
     }
 
-    if (err.status == 503) {
+    if (err.data !== undefined && err.data.errorMessage !== undefined) {
       err.message = err.data.errorMessage;
     }
 

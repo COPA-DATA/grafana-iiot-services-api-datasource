@@ -7,7 +7,7 @@ For general information on Service Grid and the involved components, please refe
 
 ## Prerequisites
 The following prerequisites need to me met in order to use this datasource:
-- working Service Grid installation with Service Grid API >= 1.0.1908.31001
+- working Service Grid installation with Service Grid API >= 10.2.2109.17002
 - Grafana Version >= 7.0.0
 
 
@@ -48,7 +48,7 @@ See the following table for reference:
 | Client ID | grafana | arbitrary client id, must be the same as `client_id` |
 | Client name | Grafana | arbitrary name |
 | Redirect URLs | https://\<grafana-uri\>:\<grafana-port\>/login/generic_oauth | see https://grafana.com/docs/auth/generic-oauth/ for reference |
-| Allowed scopes | openid profile serviceGridAPI.full_access offline_access email | the same as in `scopes` |
+| Allowed scopes | openid profile serviceGridAPI dataStorageAPI.read_only offline_access email | the same as in `scopes` |
 | Grant types | Code | required by Grafana |
 | Allow access tokens via browser | checked | required to pass OAuth tokens via browser requests |
 | Secret | generated value | must be copied to `client_secret` |
@@ -77,7 +77,7 @@ root_url=%(protocol)s://%(domain)s:3000/
 enabled=true
 client_id=grafana
 client_secret=<client secret>
-scopes=API openid profile email offline_access
+scopes=serviceGridAPI openid profile email offline_access dataStorageAPI.read_only
 auth_url=https://<domain-of-identity-service>:9430/connect/authorize
 token_url=https://<domain-of-identity-service>:9430/connect/token
 api_url=https://<domain-of-identity-service>:9430/connect/userinfo

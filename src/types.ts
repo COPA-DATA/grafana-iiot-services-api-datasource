@@ -7,6 +7,11 @@ export enum DataSourceQueryType {
   Events = "events"
 };
 
+export enum DataOrigin {
+  ServiceEngine = "ServiceEngine",
+  DataStorage = "DataStorage"
+}
+
 export enum TemplateVariableQueryType {
   Datasources = "Datasources",
   ArchivesForDatasource = "ArchivesForDataSource",
@@ -18,14 +23,14 @@ export interface DataSourceQuery extends DataQuery {
   datasourceId: string;
   queryType: DataSourceQueryType;
   alarmsEventsFilter:{variables:string[], onlyActive:boolean, onlyCleared:boolean, onlyUnacknowledged:boolean}
-  archiveFilter:{archiveId?:string, variables:string[]}
+  archiveFilter:{origin: DataOrigin, archiveId?:string, variables:string[]}
   variableFilter:{variables:string[]}
 };
 
 export const defaultQuery: Partial<DataSourceQuery> = {
   queryType:DataSourceQueryType.ArchiveData,
   alarmsEventsFilter:{variables:['*'], onlyActive:false,onlyCleared:false, onlyUnacknowledged:false},
-  archiveFilter:{variables:[]},
+  archiveFilter:{origin: DataOrigin.DataStorage, variables:[]},
   variableFilter:{variables:[]}
 };
 
@@ -40,4 +45,5 @@ export const defaultVariableQuery: Partial<TemplateVariableQuery> = {
 };
 
 export interface SGApiDataSourceOptions extends DataSourceJsonData {
+  showOfflineDatasources?: boolean;
 };

@@ -7,7 +7,7 @@ For general information on Service Grid and the involved components, please refe
 
 ## Prerequisites
 The following prerequisites need to me met in order to use this datasource:
-- working Service Grid installation with Service Grid API >= 1.0.1908.31001
+- working Service Grid installation with Service Grid API >= 10.2.2109.17002
 - Grafana Version >= 7.0.0
 
 
@@ -48,7 +48,7 @@ See the following table for reference:
 | Client ID | grafana | arbitrary client id, must be the same as `client_id` |
 | Client name | Grafana | arbitrary name |
 | Redirect URLs | https://\<grafana-uri\>:\<grafana-port\>/login/generic_oauth | see https://grafana.com/docs/auth/generic-oauth/ for reference |
-| Allowed scopes | openid profile serviceGridAPI offline_access email | the same as in `scopes` |
+| Allowed scopes | openid profile serviceGridAPI dataStorageAPI.read_only offline_access email | the same as in `scopes` |
 | Grant types | Code | required by Grafana |
 | Allow access tokens via browser | checked | required to pass OAuth tokens via browser requests |
 | Secret | generated value | must be copied to `client_secret` |
@@ -77,7 +77,7 @@ root_url=%(protocol)s://%(domain)s:3000/
 enabled=true
 client_id=grafana
 client_secret=<client secret>
-scopes=API openid profile email offline_access
+scopes=serviceGridAPI openid profile email offline_access dataStorageAPI.read_only
 auth_url=https://<domain-of-identity-service>:9430/connect/authorize
 token_url=https://<domain-of-identity-service>:9430/connect/token
 api_url=https://<domain-of-identity-service>:9430/connect/userinfo
@@ -108,8 +108,6 @@ This is done by checking the option "Forward OAuth Identity" in the Datasource c
 
 
 ## Using the Datasource to query data
-
-**Important:** Make sure to login via the Identity Service in order to be able to use the Grafana datasource and request data via the Service Grid API.
 
 To create data queries, this datasource provides a query editor with the following options:
 
@@ -202,9 +200,6 @@ Make sure that the used port (default: *3000*) is available and not used by any 
 
 ## The Datasource does show errors when requesting data and the last log in was approx. 1 hour ago.
 Check in the Identity Management if the Grafana client definition includes the scope `offline_access` and it is allowed to use refresh tokens. Also Grafana's configuration file must include the scope `offline_access`.
-
-## The datasource cannot retrieve data from the Service Grid API.
-Make sure to log in at Grafana via the Identity Service. This is required to retrieve a valid OAuth2 access token for requesting data from the Serivce Grid API.
 
 ## Timestamps of Alarms and Events are displayed as numbers (e.g. *'1.57 Tri'*)
 Timestamps of alarm and event entries are encoded as UNIX timestamps. Using the table panel requires to specify column styles, which format those timestamps in the desired date format.

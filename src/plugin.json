@@ -15,8 +15,8 @@
             "copa data"
         ],
         "logos": {
-            "small": "img/cd-logo.png",
-            "large": "img/cd-logo.png"
+            "small": "img/cd-logo.svg",
+            "large": "img/cd-logo.svg"
         },
         "links": [{ "name": "Project site", "url": "https://github.com/COPA-DATA/grafana-service-grid-api-datasource" }],
         "screenshots": [],

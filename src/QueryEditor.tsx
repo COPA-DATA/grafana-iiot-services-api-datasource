@@ -5,7 +5,7 @@ import React, { Component } from 'react';
 import { AsyncMultiSelect, AsyncSelect, Field, Label, Select, Switch } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from './DataSource';
-import { defaultQuery, SGApiDataSourceOptions, DataSourceQuery, DataSourceQueryType, TemplateVariableQueryType } from './types';
+import { defaultQuery, SGApiDataSourceOptions, DataSourceQuery, DataSourceQueryType, TemplateVariableQueryType, DataOrigin } from './types';
 import { getTemplateSrv } from "@grafana/runtime"
 import { } from '@emotion/core';  // see https://github.com/grafana/grafana/issues/26512
 
@@ -14,8 +14,9 @@ type State = {
   datasourceSelectables: Array<SelectableValue<string>>,
   queryTypeSelectables: Array<SelectableValue<DataSourceQueryType>>,
   archiveSelectables: Array<SelectableValue<string>>,
-  archiveVariableSelectables: Array<SelectableValue<string>>
+  archiveVariableSelectables: Array<SelectableValue<string>>,
   variableSelectables: Array<SelectableValue<string>>,
+  dataOriginSelectables: Array<SelectableValue<DataOrigin>>,
 }
 
 export class QueryEditor extends Component<Props, State> {
@@ -27,6 +28,7 @@ export class QueryEditor extends Component<Props, State> {
     let values: SelectableValue<DataSourceQueryType> = { label: 'Online Values', value: DataSourceQueryType.VariableValues };
     let alarms: SelectableValue<DataSourceQueryType> = { label: 'Alarms', value: DataSourceQueryType.Alarms };
     let events: SelectableValue<DataSourceQueryType> = { label: 'Events', value: DataSourceQueryType.Events };
+    let dataorigins: SelectableValue<DataOrigin>[] = [{label: "Data Storage", value: DataOrigin.DataStorage},{label: "Serivce Engine", value: DataOrigin.ServiceEngine}];
 
     this.state = {
       datasourceSelectables: [],
@@ -34,6 +36,7 @@ export class QueryEditor extends Component<Props, State> {
       archiveSelectables: [],
       archiveVariableSelectables: [],
       variableSelectables: [],
+      dataOriginSelectables: dataorigins
     };
 
   }
@@ -67,7 +70,7 @@ export class QueryEditor extends Component<Props, State> {
   loadArchives = (): Promise<SelectableValue<string>[]> => {
     const { query, datasource } = this.props;
     return new Promise(resolve => {
-      datasource.findArchives(query.datasourceId).then(ars => {
+      datasource.findArchives(query.datasourceId, query.archiveFilter.origin).then(ars => {
         // add potential datasource query variables to the list
         let vars = this.getTemplateVariables(TemplateVariableQueryType.ArchivesForDatasource);
         for (let v of vars) {
@@ -121,12 +124,22 @@ export class QueryEditor extends Component<Props, State> {
     const { onChange, onRunQuery } = this.props;
     const { datasourceId, queryType, archiveFilter, alarmsEventsFilter, variableFilter } = query;
 
+    const dataOriginFilter = 
+      <div className="gf-form">
+          <Label className="gf-form-label query-keyword width-7 margin-1">Origin</Label>
+          <Select className="min-width-15"
+            onChange={(value) => { onChange({ ...query, archiveFilter: { ...query.archiveFilter, origin: value.value! } }) }}
+            options={this.state.dataOriginSelectables}
+            value={this.state.dataOriginSelectables.find(i => i.value == archiveFilter.origin)}
+          />
+        </div>
+
     const archiveFilterContent =
       <div className="gf-form-inline">
         <div className="gf-form">
           <Label className="gf-form-label query-keyword width-7 margin-1">Archive</Label>
           <AsyncSelect className="min-width-15"
-            key={query.datasourceId}
+            key={JSON.stringify([query.datasourceId, query.archiveFilter.origin])}
             placeholder='Select an archive...'
             onChange={(value) => { onChange({ ...query, archiveFilter: { ...query.archiveFilter, archiveId: value.value! } }) }}
             loadOptions={this.loadArchives}
@@ -138,7 +151,7 @@ export class QueryEditor extends Component<Props, State> {
         <div className="gf-form">
           <Label className="gf-form-label query-keyword width-7 margin-1">Variable</Label>
           <AsyncMultiSelect className="min-width-15"
-            key={query.archiveFilter.archiveId}
+            key={JSON.stringify([query.datasourceId, query.archiveFilter.origin, query.archiveFilter.archiveId])}
             placeholder='Select a variable...'
             onChange={(value) => { onChange({ ...query, archiveFilter: { ...query.archiveFilter, variables: value.map(v => { return v.value! }) } }); onRunQuery(); }}
             loadOptions={this.loadArchiveVariables}
@@ -267,6 +280,7 @@ export class QueryEditor extends Component<Props, State> {
                 value={this.state.queryTypeSelectables.find(i => i.value == queryType)}
               />
             </div>
+            {query.queryType == DataSourceQueryType.ArchiveData && dataOriginFilter}
           </div>
           {filter}
 
@@ -275,4 +289,3 @@ export class QueryEditor extends Component<Props, State> {
     );
   }
 }
-

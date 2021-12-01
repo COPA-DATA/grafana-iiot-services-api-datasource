@@ -1,3 +1,19 @@
+# 1.2.0
+
+### Features / Enhancements
+* Added possibility to directly request data from the Service Grid Data Storage via Service Grid API
+* Service Grid version must be minimum version 10.2.2109.17002
+
+
+# 1.1.1
+
+### Features / Enhancements
+* Added checkbox to also include temporary offline Datasources in query editor
+
+### Bug Fixes
+* Fixed case sensitive typo in archive data request payload
+
+
 # 1.1.0
 
 ### Features / Enhancements
