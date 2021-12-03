@@ -1,10 +1,13 @@
 import './css/app.css';
 import { SelectableValue } from '@grafana/data';
-import { Label, Select, AsyncSelect } from '@grafana/ui';
+import { Label, Select, AsyncSelect, Field} from '@grafana/ui';
 import { defaults } from 'lodash';
 import React, { Component } from 'react';
 import { TemplateVariableQuery, TemplateVariableQueryType, defaultVariableQuery } from './types';
-import { DataSource } from './DataSource';
+import { DataSource } from './datasource';
+
+import { LegacyForms } from '@grafana/ui';
+const { Input } = LegacyForms;
 
 interface TemplateVariableQueryProps {
   query: TemplateVariableQuery;
@@ -39,8 +42,37 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
     };
   }
 
+  createDefinitionText = (newQuery: TemplateVariableQuery): string => {
+    
+    let selectedDatasourceLabel = this.state.datasourceSelectables.find(i => i.value == newQuery.datasourceId)?.label;
+    let selectedArchiveLabel = this.state.archiveSelectables.find(i => i.value == newQuery.archiveId)?.label;
+    let selectedQueryType = newQuery.queryType;
+
+    let definitionText;
+
+    switch(selectedQueryType)
+    {
+      case TemplateVariableQueryType.Datasources:
+        definitionText = 'Service Grid Datasources';
+        break;
+      case TemplateVariableQueryType.ArchivesForDatasource:
+        definitionText = 'Archives for the Service Grid Datasource ' + selectedDatasourceLabel;
+        break;
+      case TemplateVariableQueryType.VariablesForDatasource:
+        definitionText = 'Variables for the Service Grid Datasource ' + selectedDatasourceLabel;
+        break;
+      case TemplateVariableQueryType.VariablesForArchive:
+        definitionText = 'Variables for archive ' + selectedArchiveLabel + ' of the Service Grid Datasource ' + selectedDatasourceLabel;
+        break;
+    }
+    
+    return definitionText;
+  }
+
   loadDatasources = (): Promise<SelectableValue<string>[]> => {
+    
     const { datasource } = this.props;
+
     return new Promise(resolve => {
       datasource.findDataSources().then(ds => {
         this.setState({ datasourceSelectables: ds });
@@ -51,6 +83,7 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
 
   loadArchives = (): Promise<SelectableValue<string>[]> => {
     const { query, datasource } = this.props;
+    
     return new Promise(resolve => {
       datasource.findArchives(query.datasourceId!).then(ars => {
         this.setState({ archiveSelectables: ars });
@@ -59,9 +92,20 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
     })
   }
 
+  isValidRegex = (regex: string) : boolean => {
+    try {
+      new RegExp(regex);
+    } catch (e) {
+      console.error("invalid regex: " + regex);
+      return false;
+    }
+    return true;
+  }
+
   render() {
     const query = defaults(this.props.query, defaultVariableQuery);
     const { onChange } = this.props;
+    this.props.onChange
 
     const datasourceSelect =
       <div className="gf-form-inline">
@@ -70,7 +114,7 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
           <AsyncSelect className="min-width-20"
             key={query.queryType}
             placeholder='Select a datasource...'
-            onChange={(value) => { onChange({ ...query, datasourceId: value.value! }, 'Archives for the Service Grid Datasource ' + value.label) }}
+            onChange={(value) => { onChange({ ...query, datasourceId: value.value! }, this.createDefinitionText({ ...query, datasourceId: value.value! })) }}
             loadOptions={this.loadDatasources}
             defaultOptions
             value={this.state.datasourceSelectables.find(i => i.value == query.datasourceId)}
@@ -86,12 +130,26 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
           <AsyncSelect className="min-width-15"
             key={query.datasourceId}
             placeholder='Select an archive...'
-            onChange={(value) => { onChange({ ...query, archiveId: value.value! }, 'Variables for the Archive ' + value.label) }}
+            onChange={(value) => { onChange({ ...query, archiveId: value.value! }, this.createDefinitionText({ ...query, archiveId: value.value! })) }}
             loadOptions={this.loadArchives}
             defaultOptions
             value={this.state.archiveSelectables.find(i => i.value == query.archiveId)}
             invalid={!this.state.archiveSelectables.find(i => i.value == query.archiveId)}
           />
+        </div>
+      </div>
+
+      const regexFilter =
+      <div className="gf-form-inline">
+        <div className="gf-form">
+          <Label className="gf-form-label query-keyword width-7 margin-1">Filter Regex</Label>
+          <Field invalid={!this.isValidRegex(query.regexString)} error={!this.isValidRegex(query.regexString) ? 'Invalid regex pattern' : ''}>
+            <Input
+                placeholder='Filter available variables ...'
+                value={query.regexString}
+                onChange={e => {onChange({...query, regexString: e.target.value}, this.createDefinitionText({...query, regexString: e.target.value})) }}
+              />
+          </Field>
         </div>
       </div>
 
@@ -102,7 +160,7 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
             <div className="gf-form">
               <Label className="gf-form-label query-keyword width-7 margin-1">Query Type</Label>
               <Select className="min-width-10"
-                onChange={(value) => onChange({ ...query, queryType: value.value! }, 'Datasources of Service Grid')}
+                onChange={(value) => onChange({ ...query, queryType: value.value! }, this.createDefinitionText({ ...query, queryType: value.value! }))}
                 options={this.state.queryTypeSelectables}
                 value={this.state.queryTypeSelectables.find(i => i.value == query.queryType)}
               />
@@ -110,6 +168,7 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
           </div>
           {query.queryType != TemplateVariableQueryType.Datasources && datasourceSelect}
           {query.queryType == TemplateVariableQueryType.VariablesForArchive && archiveSelect}
+          {regexFilter}
         </div>
       </div>
     );

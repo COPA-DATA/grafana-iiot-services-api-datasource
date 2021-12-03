@@ -169,24 +169,9 @@ You can use Grafanas regex filtering capabilities to not only filter those value
 2. Open the folder in an IDE (e.g. VS Code)
 3. Run `yarn install`
 4. Build the datasource in development mode by running `yarn dev` or `yarn build`
-5. Install the datasource by copying the `dist` folder to Grafana's plugin folder.<br> You can also create a static link from the Grafana plugin folder to the local `dist` folder. This way there is no need for a copy step and changes to the sources are directly reflected after a rebuild.<br>See https://grafana.com/docs/plugins/installation/ for reference.
-6. Start debugging the plugin using VS Code and the Chrome Debugging Tools.
-    
-    See the following *launch.json* configuration for reference.
-    ```JSON
-    {
-      "version": "0.2.0",
-      "configurations": [
-      {
-        "type": "chrome",
-        "request": "launch",
-        "name": "Launch Chrome against localhost",
-        "url": "https://localhost:3000/",
-        "webRoot": "${workspaceFolder}/src",
-        "smartStep": true
-      }]
-    }
-    ```
+5. Install the datasource by copying the `dist` folder to Grafana's plugin folder.<br> You can also create a static link from the Grafana plugin folder to the local `dist` folder.  
+    On Windows use the following command: `new-item -path "C:\Program Files\GrafanaLabs\grafana\data\plugins\copadata-servicegrid-datasource" -ItemType SymbolicLink -Value C:\<path-to-repository>\dist\`  
+    This way there is no need for a copy step and changes to the sources are directly reflected after a rebuild.<br>See https://grafana.com/docs/plugins/installation/ for reference.
 
 
 # Troubleshooting

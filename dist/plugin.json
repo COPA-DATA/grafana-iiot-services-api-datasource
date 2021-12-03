@@ -21,7 +21,7 @@
         "links": [{ "name": "Project site", "url": "https://github.com/COPA-DATA/grafana-service-grid-api-datasource" }],
         "screenshots": [],
         "version": "1.2.0",
-        "updated": "2021-12-01"
+        "updated": "2021-12-03"
     },
     "dependencies": {
         "grafanaVersion": "7.0.x",

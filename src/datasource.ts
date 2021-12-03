@@ -67,6 +67,7 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
 
   replaceTemplateVariables(query:DataSourceQuery, scopedVars:ScopedVars) : DataSourceQuery
   {
+    
     query.datasourceId = getTemplateSrv().replace(query.datasourceId, scopedVars);
     query.archiveFilter.archiveId = getTemplateSrv().replace(query.archiveFilter.archiveId, scopedVars);
 
@@ -102,14 +103,28 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
     // Instead we return a string in the 'text' property in the form <DisplayName> | <value>
     // That way we can use regex capture groups in grafanas filter to create label and text props
     // Example: Catch only projects that start with "FNB": (?<text>FNB.+) \| (?<value>[\da-z\-]+)
+
+    let regex = new RegExp("");
+    try {
+      regex = new RegExp(query.regexString, "i");
+    } catch (e) {
+      console.error(query.regexString + " has invalid regex pattern. Ignore regex filter.");
+    }
+
     switch(query.queryType)
     {
       case TemplateVariableQueryType.Datasources:
         return this.findDataSources().then((ds) => {
           let items = [];
           for (let d of ds){
-            //items.push({text:d.label,value:d.value})
-            items.push({text: d.label + ' | '+ d.value})
+            
+            if (d.label.match(regex) == null){
+              console.debug(d.label + " does not match regex " + regex);
+              continue;
+            }
+
+            items.push({text:d.label,value:d.value})
+
           }
           return Promise.resolve(items);
         });
@@ -118,8 +133,14 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
         return this.findArchives(query.datasourceId!).then((ars) => {
           let items = [];
           for (let d of ars){
-            //items.push({text:d.label,value:d.value})
-            items.push({text: d.label + ' | '+ d.value})
+
+            if (d.label.match(regex) == null){
+              console.debug(d.label + " does not match regex " + regex);
+              continue;
+            }
+
+            items.push({text:d.label,value:d.value})
+
           }
           return Promise.resolve(items);
         });
@@ -128,8 +149,14 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
         return this.findVariablesForArchive(query.datasourceId!,query.archiveId!).then((vars) => {
           let items = [];
           for (let d of vars){
-            //items.push({text:d.label,value:d.value})
-            items.push({text: d.label + ' | '+ d.value})
+
+            if (d.label.match(regex) == null){
+              console.debug(d.label + " does not match regex " + regex);
+              continue;
+            }
+
+            items.push({text:d.label,value:d.value})
+            
           }
           return Promise.resolve(items);
         });
@@ -138,8 +165,14 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
         return this.findVariables(query.datasourceId!).then((vars) => {
           let items = [];
           for (let d of vars){
-            //items.push({text:d.label,value:d.value})
-            items.push({text: d.label + ' | '+ d.value})
+
+            if (d.label.match(regex) == null){
+              console.debug(d.label + " does not match regex " + regex);
+              continue;
+            }
+
+            items.push({text:d.label,value:d.value})
+            
           }
           return Promise.resolve(items);
         });

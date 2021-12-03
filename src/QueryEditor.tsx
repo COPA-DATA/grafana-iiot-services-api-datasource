@@ -4,7 +4,7 @@ import './css/app.css';
 import React, { Component } from 'react';
 import { AsyncMultiSelect, AsyncSelect, Field, Label, Select, Switch } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { DataSource } from './DataSource';
+import { DataSource } from './datasource';
 import { defaultQuery, SGApiDataSourceOptions, DataSourceQuery, DataSourceQueryType, TemplateVariableQueryType, DataOrigin } from './types';
 import { getTemplateSrv } from "@grafana/runtime"
 import { } from '@emotion/core';  // see https://github.com/grafana/grafana/issues/26512

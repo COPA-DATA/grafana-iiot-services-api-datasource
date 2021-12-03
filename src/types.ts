@@ -38,6 +38,7 @@ export interface TemplateVariableQuery {
   queryType: TemplateVariableQueryType;
   datasourceId?: string;
   archiveId?: string;
+  regexString: string;  // used to filter the returned values for a specific regex
 }
 
 export const defaultVariableQuery: Partial<TemplateVariableQuery> = {
