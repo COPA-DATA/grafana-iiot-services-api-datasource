@@ -97,13 +97,6 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
 
   async metricFindQuery(query: TemplateVariableQuery, options?: any) : Promise<MetricFindValue[]>{
     
-    // Currently grafana does not support filtering variables by their labels.
-    // Since this is an important usecase for us, we will (for now) not use the
-    // 'label' property of MetricFindValue.
-    // Instead we return a string in the 'text' property in the form <DisplayName> | <value>
-    // That way we can use regex capture groups in grafanas filter to create label and text props
-    // Example: Catch only projects that start with "FNB": (?<text>FNB.+) \| (?<value>[\da-z\-]+)
-
     let regex = new RegExp("");
     try {
       regex = new RegExp(query.regexString, "i");

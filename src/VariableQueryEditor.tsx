@@ -110,8 +110,8 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
     const datasourceSelect =
       <div className="gf-form-inline">
         <div className="gf-form">
-          <Label className="gf-form-label query-keyword width-7 margin-1">Datasource</Label>
-          <AsyncSelect className="min-width-20"
+          <Label className="gf-form-label query-keyword width-10 margin-1">Datasource</Label>
+          <AsyncSelect className="min-width-15"
             key={query.queryType}
             placeholder='Select a datasource...'
             onChange={(value) => { onChange({ ...query, datasourceId: value.value! }, this.createDefinitionText({ ...query, datasourceId: value.value! })) }}
@@ -126,7 +126,7 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
     const archiveSelect =
       <div className="gf-form-inline">
         <div className="gf-form">
-          <Label className="gf-form-label query-keyword width-7 margin-1">Archive</Label>
+          <Label className="gf-form-label query-keyword width-10 margin-1">Archive</Label>
           <AsyncSelect className="min-width-15"
             key={query.datasourceId}
             placeholder='Select an archive...'
@@ -142,10 +142,11 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
       const regexFilter =
       <div className="gf-form-inline">
         <div className="gf-form">
-          <Label className="gf-form-label query-keyword width-7 margin-1">Filter Regex</Label>
-          <Field invalid={!this.isValidRegex(query.regexString)} error={!this.isValidRegex(query.regexString) ? 'Invalid regex pattern' : ''}>
+          <Label className="gf-form-label query-keyword width-10 margin-1">Filter values</Label>
+          <Field className="min-width-15"
+            invalid={!this.isValidRegex(query.regexString)} error={!this.isValidRegex(query.regexString) ? 'Invalid regex pattern' : ''}>
             <Input
-                placeholder='Filter available variables ...'
+                placeholder='Apply regex filter to values ...'
                 value={query.regexString}
                 onChange={e => {onChange({...query, regexString: e.target.value}, this.createDefinitionText({...query, regexString: e.target.value})) }}
               />
@@ -158,7 +159,7 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
         <div className="gf-form-group">
           <div className="gf-form-inline">
             <div className="gf-form">
-              <Label className="gf-form-label query-keyword width-7 margin-1">Query Type</Label>
+              <Label className="gf-form-label query-keyword width-10 margin-1">Query Type</Label>
               <Select className="min-width-10"
                 onChange={(value) => onChange({ ...query, queryType: value.value! }, this.createDefinitionText({ ...query, queryType: value.value! }))}
                 options={this.state.queryTypeSelectables}

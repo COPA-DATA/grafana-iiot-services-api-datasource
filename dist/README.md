@@ -147,12 +147,8 @@ The datasource supports 4 different kinds of template variables:
 | Variables for archive | List all variables of a given archive |
 | Variables for datasource | List all variables of a given datasource |
 
-The variables will be returned in the format `<Displayname> | <Value>`. So your zenon datasources could look like this: 
-`MY_FIRST_PROJECT | 824816c9-5580-4e74-a1e7-799a6ea6f38d`
-`MY_SECOND_PROJECT | 65a6968e-3d44-421a-8a09-1858b493676e`
-
-You can use Grafanas regex filtering capabilities to not only filter those values, but also separate them into a `text` and a `value` field. The text field will be used as a display label in Grafanas UI. The expression `(?<text>.*(FIRST).+) \| (?<value>.+)` for example, would filter for all datasources, that contain the string `FIRST` and separate the result into the corresponding fields.
-
+### Filtering
+With the field "Filter values" you can apply a regex filter to reduce the set of available values to select from in the Grafana dashboard.
 
 # Building the Datasource
 
