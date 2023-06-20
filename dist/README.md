@@ -1,18 +1,19 @@
-# Service Grid API Datasource for Grafana
+# IIoT Services API Datasource for Grafana
 
-This Datasource provides support for COPA-DATA's Service Grid API to request metrics from Service Grid installations.
+This Datasource provides support for COPA-DATA's IIoT Services API to request metrics from IIoT Services installations.
 
-For general information on Service Grid and the involved components, please refer to https://www.copadata.com/en/ or sales@copadata.com.
+For general information on the IIoT Services and the involved components, please refer to https://www.copadata.com/en/ or sales@copadata.com.
+The online documentation for the zenon software platform is available via https://onlinehelp.copadata.com/
 
 
 ## Prerequisites
 The following prerequisites need to me met in order to use this datasource:
-- working Service Grid installation with Service Grid API >= 10.2.2109.17002
-- Grafana Version >= 7.0.0
+- working IIoT Services (Service Grid) installation with IIoT Services (Service Grid) API >= 10.2.2109.17002
+- Grafana Version >= 8.3.0
 
 
 ## Supported data queries
-The following data can be retrieved from Service Grid API via this datasource:
+The following data can be retrieved from IIoT Services API via this datasource:
 - Historic variable values
 - Online values
 - Alarm entries
@@ -31,14 +32,14 @@ See https://grafana.com/docs/plugins/installation/ for reference
 
 ## Configuration
 
-Prior to using the Service Grid Datasource, the following things need to be configured:
-- OAuth2 client definition for Grafana using Service Grid Identity Management
+Prior to using the IIoT Services Datasource, the following things need to be configured:
+- OAuth2 client definition for Grafana using IIoT Services Identity Management
 - OAuth2 configuration for Grafana
 - Datasource configuration
 
 ### Configure Grafana OAuth2 client using Identity Management
 
-In order that Grafana can use the Service Grid Identity Service for user authentication, a client definition needs to be setup using the Identity Management.
+In order that Grafana can use the IIoT Services Identity Service for user authentication, a client definition needs to be setup using the Identity Management.
 For this client configuration, it is important to set the correct client id, redirect uri and scopes for Grafana. The client secret, which is required for `custom.ini` is generated during this configuration step.
 
 See the following table for reference:
@@ -48,17 +49,17 @@ See the following table for reference:
 | Client ID | grafana | arbitrary client id, must be the same as `client_id` |
 | Client name | Grafana | arbitrary name |
 | Redirect URLs | https://\<grafana-uri\>:\<grafana-port\>/login/generic_oauth | see https://grafana.com/docs/auth/generic-oauth/ for reference |
-| Allowed scopes | openid profile serviceGridAPI dataStorageAPI.read_only offline_access email | the same as in `scopes` |
+| Allowed scopes | openid profile iiotServicesAPI dataStorageAPI offline_access email | the same as in `scopes` |
 | Grant types | Code | required by Grafana |
 | Allow access tokens via browser | checked | required to pass OAuth tokens via browser requests |
 | Secret | generated value | must be copied to `client_secret` |
 
 
-For additional information on the Identity Management, please refer to the Service Grid manual.
+For additional information on the Identity Management, please refer to the IIoT Services manual (https://onlinehelp.copadata.com/).
 
 ### Configure Grafana for OAuth2 Authentication
 
-Grafana supports the OAuth2 authentication mechanism for authenticating users against OAuth2 Identity providers. Grafana plugins allow to forward those OAuth2 tokens to the respective API endpoints, where they would query the data from. In terms of Service Grid, Grafana must be able to authenticate a user against the Service Grid Identity Service and has to forward this OAuth2 token via the Datasource Plugin to the Service Grid API, to read data from it.
+Grafana supports the OAuth2 authentication mechanism for authenticating users against OAuth2 Identity providers. Grafana plugins allow to forward those OAuth2 tokens to the respective API endpoints, where they would query the data from. In terms of IIoT Services, Grafana must be able to authenticate a user against the IIoT Services Identity Service and has to forward this OAuth2 token via the Datasource Plugin to the IIoT Services API, to read data from it.
 In fact this means that the Grafana Backend needs to be configured to use OAuth2 (https://grafana.com/docs/auth/generic-oauth/).
 
 See the following configuration section from the configuration file *custom.ini*:
@@ -77,7 +78,7 @@ root_url=%(protocol)s://%(domain)s:3000/
 enabled=true
 client_id=grafana
 client_secret=<client secret>
-scopes=serviceGridAPI openid profile email offline_access dataStorageAPI.read_only
+scopes=iiotServicesAPI openid profile email offline_access dataStorageAPI
 auth_url=https://<domain-of-identity-service>:9430/connect/authorize
 token_url=https://<domain-of-identity-service>:9430/connect/token
 api_url=https://<domain-of-identity-service>:9430/connect/userinfo
@@ -100,7 +101,7 @@ Depending on your installation approach, different actions might be required:
 ### Configuration Datasource
 
 Once the Datasource plugin is installed, as outlined in section **Installation**, the datasource can be created using the Grafana UI.
-In order that the Datasource can authenticate requests at the Service Grid API, it is required that OAuth authentication tokens are forwarded.
+In order that the Datasource can authenticate requests at the IIoT Services API, it is required that OAuth authentication tokens are forwarded.
 This is done by checking the option "Forward OAuth Identity" in the Datasource configuration.
 
 ![](./doc/datasource-config.png)
@@ -155,9 +156,9 @@ With the field "Filter values" you can apply a regex filter to reduce the set of
 ## Preparation
 - Development Environment, which supports Debugging of Chrome Webpages (e.g. Visual Studio Code)
 - Development tools:
-    - node: >= 12
-    - npm: >= 6
-    - yarn
+    - node: >= 16
+    - npm: >= 8
+    - yarn (install via npm)
 
 ## Build Steps
 
@@ -173,8 +174,8 @@ With the field "Filter values" you can apply a regex filter to reduce the set of
 # Troubleshooting
 
 ## Why are there no Datasources listed in the dropdown?
-Make sure that the user, which is trying to request data from the Service Grid API, has sufficient permissions and is assigned to the desired datasources in the Identity Management.
-Try to perform requests using the Service Grid API's Swagger UI client, to eliminate any configuration mistakes for the Service Grid Datasource plugin.
+Make sure that the user, which is trying to request data from the IIoT Services API, has sufficient permissions and is assigned to the desired datasources in the Identity Management.
+Try to perform requests using the IIoT Services API's Swagger UI client, to eliminate any configuration mistakes for the IIoT Services Datasource plugin.
 
 ## Why am I not able to connect to grafana even if it is started?
 Make sure that the used port (default: *3000*) is available and not used by any other services.

@@ -1,10 +1,10 @@
 {
     "type": "datasource",
-    "name": "Service Grid Datasource",
+    "name": "zenon IIoT Services Datasource",
     "id": "copadata-servicegrid-datasource",
     "metrics": true,
     "info": {
-        "description": "Datasource for requesting data from Service Grid API",
+        "description": "Datasource for requesting data from zenon IIoT Services API",
         "author": {
             "name": "Ing. Punzenberger COPA-DATA GmbH",
             "url": "www.copadata.com"
@@ -12,7 +12,8 @@
         "keywords": [
             "service grid",
             "copadata",
-            "copa data"
+            "copa data",
+            "iiot services"
         ],
         "logos": {
             "small": "img/cd-logo.svg",

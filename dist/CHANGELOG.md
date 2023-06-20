@@ -1,3 +1,10 @@
+# 1.3.0
+
+### Features / Enhancements
+* Updated naming of *Service Grid* to *IIoT Services*
+* Updated Grafana libraries to version 8.3.0
+
+
 # 1.2.0
 
 ### Features / Enhancements

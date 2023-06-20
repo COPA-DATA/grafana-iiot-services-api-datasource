@@ -25,7 +25,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
       <div className="gf-form-group">
         <div className="gf-form">
           <DataSourceHttpSettings
-            defaultUrl="http://localhost:9400"
+            defaultUrl="https://localhost:9443/iiot-api"
             dataSourceConfig={options}
             showAccessOptions={true}
             //sigV4AuthEnabled={true}

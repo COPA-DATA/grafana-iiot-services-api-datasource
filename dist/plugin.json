@@ -1,10 +1,10 @@
 {
     "type": "datasource",
-    "name": "Service Grid Datasource",
+    "name": "zenon IIoT Services Datasource",
     "id": "copadata-servicegrid-datasource",
     "metrics": true,
     "info": {
-        "description": "Datasource for requesting data from Service Grid API",
+        "description": "Datasource for requesting data from zenon IIoT Services API",
         "author": {
             "name": "Ing. Punzenberger COPA-DATA GmbH",
             "url": "www.copadata.com"
@@ -12,7 +12,8 @@
         "keywords": [
             "service grid",
             "copadata",
-            "copa data"
+            "copa data",
+            "iiot services"
         ],
         "logos": {
             "small": "img/cd-logo.svg",
@@ -20,8 +21,8 @@
         },
         "links": [{ "name": "Project site", "url": "https://github.com/COPA-DATA/grafana-service-grid-api-datasource" }],
         "screenshots": [],
-        "version": "1.2.0",
-        "updated": "2021-12-03"
+        "version": "1.3.0",
+        "updated": "2023-06-20"
     },
     "dependencies": {
         "grafanaVersion": "7.0.x",
