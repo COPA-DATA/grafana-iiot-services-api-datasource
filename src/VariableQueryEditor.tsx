@@ -53,16 +53,16 @@ export class VariableQueryEditor extends Component<TemplateVariableQueryProps, S
     switch(selectedQueryType)
     {
       case TemplateVariableQueryType.Datasources:
-        definitionText = 'Service Grid Datasources';
+        definitionText = 'IIoT Services Datasources';
         break;
       case TemplateVariableQueryType.ArchivesForDatasource:
-        definitionText = 'Archives for the Service Grid Datasource ' + selectedDatasourceLabel;
+        definitionText = 'Archives for the IIoT Services Datasource ' + selectedDatasourceLabel;
         break;
       case TemplateVariableQueryType.VariablesForDatasource:
-        definitionText = 'Variables for the Service Grid Datasource ' + selectedDatasourceLabel;
+        definitionText = 'Variables for the IIoT Services Datasource ' + selectedDatasourceLabel;
         break;
       case TemplateVariableQueryType.VariablesForArchive:
-        definitionText = 'Variables for archive ' + selectedArchiveLabel + ' of the Service Grid Datasource ' + selectedDatasourceLabel;
+        definitionText = 'Variables for archive ' + selectedArchiveLabel + ' of the IIoT Services Datasource ' + selectedDatasourceLabel;
         break;
     }
     

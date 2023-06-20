@@ -7,7 +7,6 @@ import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from './datasource';
 import { defaultQuery, SGApiDataSourceOptions, DataSourceQuery, DataSourceQueryType, TemplateVariableQueryType, DataOrigin } from './types';
 import { getTemplateSrv } from "@grafana/runtime"
-import { } from '@emotion/core';  // see https://github.com/grafana/grafana/issues/26512
 
 type Props = QueryEditorProps<DataSource, DataSourceQuery, SGApiDataSourceOptions>;
 type State = {
