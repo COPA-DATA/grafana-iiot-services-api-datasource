@@ -22,7 +22,7 @@
         "links": [{ "name": "Project site", "url": "https://github.com/COPA-DATA/grafana-iiot-services-api-datasource" }],
         "screenshots": [],
         "version": "1.3.0",
-        "updated": "2023-06-20"
+        "updated": "2023-07-24"
     },
     "dependencies": {
         "grafanaVersion": "8.3.x",

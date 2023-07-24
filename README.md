@@ -87,7 +87,7 @@ allow_sign_up=true
 send_client_credentials_via_post=true
 
 [plugins]
-allow_loading_unsigned_plugins=copadata-servicegrid-datasource
+allow_loading_unsigned_plugins=copadata-iiot-services-datasource
 ```
 
 **Hint:** When Grafana is being operated using Docker, please refer to the Grafana documentation (https://grafana.com/docs/grafana/latest/installation/configure-docker/) how to provide configuration options via environment variables.
@@ -167,7 +167,7 @@ With the field "Filter values" you can apply a regex filter to reduce the set of
 3. Run `yarn install`
 4. Build the datasource in development mode by running `yarn dev` or `yarn build`
 5. Install the datasource by copying the `dist` folder to Grafana's plugin folder.<br> You can also create a static link from the Grafana plugin folder to the local `dist` folder.  
-    On Windows use the following command: `new-item -path "C:\Program Files\GrafanaLabs\grafana\data\plugins\copadata-servicegrid-datasource" -ItemType SymbolicLink -Value C:\<path-to-repository>\dist\`  
+    On Windows use the following command: `new-item -path "C:\Program Files\GrafanaLabs\grafana\data\plugins\copadata-iiot-services-datasource" -ItemType SymbolicLink -Value C:\<path-to-repository>\dist\`  
     This way there is no need for a copy step and changes to the sources are directly reflected after a rebuild.<br>See https://grafana.com/docs/plugins/installation/ for reference.
 
 
