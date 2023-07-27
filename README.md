@@ -2,14 +2,18 @@
 
 This Datasource provides support for COPA-DATA's IIoT Services API to request metrics from IIoT Services installations.
 
+**Important: The source code of the datasource and the respective documentation is provided as is and is not covered by COPA-DATA's support and product lifecycle. You can re-use and modify the code as desired under the conditions of the MIT license. Please especially note the exclusion of any warranty and liability in case of any problems or damage resulting from this software, as stated in the MIT license.**
+
 For general information on the IIoT Services and the involved components, please refer to https://www.copadata.com/en/ or sales@copadata.com.
 The online documentation for the zenon software platform is available via https://onlinehelp.copadata.com/
 
 
 ## Prerequisites
-The following prerequisites need to me met in order to use this datasource:
-- working IIoT Services (Service Grid) installation with IIoT Services (Service Grid) API >= 10.2.2109.17002
+The following prerequisites need to be met in order to use this datasource:
+- working IIoT Services (Service Grid) installation with IIoT Services (Service Grid) API >= 12.0.2307.4002  
+**Hint:** For versions prior 12.0, you can use this latest version of the datasource demo code, but please refer to the configuration instructions for version 1.2.0 of the datasource plugin (https://github.com/COPA-DATA/grafana-iiot-services-api-datasource/tree/v1.2.0)
 - Grafana Version >= 8.3.0
+
 
 
 ## Supported data queries
