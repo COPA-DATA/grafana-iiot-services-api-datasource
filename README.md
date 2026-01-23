@@ -83,9 +83,9 @@ enabled=true
 client_id=grafana
 client_secret=<client secret>
 scopes=iiotServicesAPI openid profile email offline_access dataStorageAPI
-auth_url=https://<domain-of-identity-service>:9430/connect/authorize
-token_url=https://<domain-of-identity-service>:9430/connect/token
-api_url=https://<domain-of-identity-service>:9430/connect/userinfo
+auth_url=https://<domain-of-iiot-services>:<port-of-iiot-services/identity-service/connect/authorize
+token_url=https://<domain-of-iiot-services>:<port-of-iiot-services>/identity-service/connect/token
+api_url=https://<domain-of-iiot-services>:<port-of-iiot-services>/identity-service/connect/userinfo
 allowed_domains=<list of allowed email domains>
 allow_sign_up=true
 send_client_credentials_via_post=true
@@ -107,10 +107,7 @@ Depending on your installation approach, different actions might be required:
 Once the Datasource plugin is installed, as outlined in section **Installation**, the datasource can be created using the Grafana UI.
 In order that the Datasource can authenticate requests at the IIoT Services API, it is required that OAuth authentication tokens are forwarded.
 This is done by checking the option "Forward OAuth Identity" in the Datasource configuration.
-
-![](./doc/datasource-config.png)
-
-
+For the URL use the respective url of the IIoT API in the form `https://<domain-of-iiot-services>:<port-of-iiot-services>/iiot-api`.
 
 ## Using the Datasource to query data
 
