@@ -118,8 +118,8 @@ To create data queries, this datasource provides a query editor with the followi
 | Datasource | Selection of the available zenon Datasources for the current user |
 | Query Type | Selection of the desired data request (`Archive Data` \| `Online Values` \| `Alarms` \| `Events`) |
 | Archive | Selection of available archive for the selected zenon Datasource | only available for Query Type `Archive Data` |
-| Variable | Selection of available variables for the selected zenon Datasource and archive | only available for Query Type `Archive Data` |
-| Variable Filter | Allows filtering the resulting data for a specific variable. The filter allows to use an `*` as wildcard | only available for Query Types `Alarms`, `Events` and `Online Values`|
+| Variable | Selection of available variables for the selected zenon Datasource and archive. Typing narrows the list to variables whose name contains the text (case-insensitive, `*` as wildcard) | only available for Query Type `Archive Data` |
+| Variable Filter | Allows filtering the resulting data for a specific variable. The filter allows to use an `*` as wildcard. Typing narrows the variable list on the server: `INV` requests `*INV*`, `INV*PAC` requests `*INV*PAC*` | only available for Query Types `Alarms`, `Events` and `Online Values`|
 | Only Active | Only active alarms are shown | only available for Query Types `Alarms` |
 | Only Cleared | Only cleared alarms are shown | only available for Query Types `Alarms` |
 | Only Active | Only unacknowledged alarms are shown | only available for Query Types `Alarms` |

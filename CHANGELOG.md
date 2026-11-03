@@ -1,3 +1,10 @@
+# Unreleased
+
+### Features / Enhancements
+* Variable selectors filter by the typed text instead of listing every variable: the *Variable Filter* list is requested from the IIoT Services API with a name filter (`*<text>*`, `*` as wildcard), the archive *Variable* list is narrowed to matching names. Requests wait for a 300 ms typing pause
+* Selected variables stay selected when the option list is filtered
+
+
 # 1.3.0
 
 ### Features / Enhancements
