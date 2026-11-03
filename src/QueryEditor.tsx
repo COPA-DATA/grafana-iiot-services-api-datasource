@@ -4,7 +4,10 @@ import './css/app.css';
 import React, { Component } from 'react';
 import { AsyncMultiSelect, AsyncSelect, Field, Label, Select, Switch } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { DataSource } from './datasource';
+import { DataSource, matchesNamePattern, toNamePattern } from './datasource';
+
+/** Wait this long after the last keystroke before asking the server for a filtered list. */
+const FILTER_DEBOUNCE_MS = 300;
 import { defaultQuery, SGApiDataSourceOptions, DataSourceQuery, DataSourceQueryType, TemplateVariableQueryType, DataOrigin } from './types';
 import { getTemplateSrv } from "@grafana/runtime"
 
@@ -81,10 +84,32 @@ export class QueryEditor extends Component<Props, State> {
     })
   }
 
-  loadArchiveVariables = (): Promise<SelectableValue<string>[]> => {
+  private filterTimer?: ReturnType<typeof setTimeout>;
+
+  /** Runs load() at once for the initial list, or after a typing pause when there is filter text. */
+  private debounceTyping<T>(input: string | undefined, load: () => Promise<T>): Promise<T> {
+    clearTimeout(this.filterTimer);
+    if (!input) {
+      return load();
+    }
+    // Superseded requests are left pending; react-select only uses the latest one.
+    return new Promise(resolve => { this.filterTimer = setTimeout(() => load().then(resolve), FILTER_DEBOUNCE_MS); });
+  }
+
+  /** Builds the selected options from the query itself, so a filtered option list never drops a selection. */
+  toVariableOptions = (names: string[]): SelectableValue<string>[] =>
+    names.map(name => {
+      const templateVar = /^\$\{(.+):json\}$/.exec(name);
+      return { label: templateVar ? '$' + templateVar[1] : name, value: name };
+    });
+
+  loadArchiveVariables = (input?: string): Promise<SelectableValue<string>[]> => {
     const { query, datasource } = this.props;
-    return new Promise(resolve => {
-      datasource.findVariablesForArchive(query.datasourceId, query.archiveFilter.archiveId!).then(vars => {
+    return this.debounceTyping(input, () => new Promise(resolve => {
+      datasource.findVariablesForArchive(query.datasourceId, query.archiveFilter.archiveId!).then(allVars => {
+        // The archive endpoint has no name filter, so filter the fresh response here.
+        const pattern = toNamePattern(input);
+        let vars = allVars.filter(v => matchesNamePattern(v.label, pattern));
         // add potential datasource query variables to the list
         let templateVars = this.getTemplateVariables(TemplateVariableQueryType.VariablesForArchive);
         for (let v of templateVars) {
@@ -93,13 +118,13 @@ export class QueryEditor extends Component<Props, State> {
         this.setState({ archiveVariableSelectables: vars });
         resolve(vars);
       })
-    })
+    }));
   }
 
-  loadVariables = (): Promise<SelectableValue<string>[]> => {
+  loadVariables = (input?: string): Promise<SelectableValue<string>[]> => {
     const { query, datasource } = this.props;
-    return new Promise(resolve => {
-      datasource.findVariables(query.datasourceId).then(vars => {
+    return this.debounceTyping(input, () => new Promise(resolve => {
+      datasource.findVariables(query.datasourceId, input).then(vars => {
         // add potential datasource query variables to the list
         let templateVars = this.getTemplateVariables(TemplateVariableQueryType.VariablesForDatasource);
         for (let v of templateVars) {
@@ -109,7 +134,7 @@ export class QueryEditor extends Component<Props, State> {
         this.setState({ variableSelectables: vars });
         resolve(vars);
       })
-    })
+    }));
   }
 
   onSwitchChanged = (event: React.FormEvent<HTMLInputElement>) => {
@@ -155,8 +180,9 @@ export class QueryEditor extends Component<Props, State> {
             onChange={(value) => { onChange({ ...query, archiveFilter: { ...query.archiveFilter, variables: value.map(v => { return v.value! }) } }); onRunQuery(); }}
             loadOptions={this.loadArchiveVariables}
             defaultOptions
-            value={this.state.archiveVariableSelectables.filter(i => archiveFilter.variables.includes(i.value!))}
-            invalid={this.state.archiveVariableSelectables.filter(i => archiveFilter.variables.includes(i.value!)).length == 0}
+            filterOption={() => true}
+            value={this.toVariableOptions(archiveFilter.variables)}
+            invalid={archiveFilter.variables.length == 0}
           />
         </div>
       </div>;
@@ -170,8 +196,9 @@ export class QueryEditor extends Component<Props, State> {
             onChange={(value) => { onChange({ ...query, alarmsEventsFilter: { ...query.alarmsEventsFilter, variables: value.map((v: SelectableValue<string>) => { return v.value! }) } }); onRunQuery(); }}
             loadOptions={this.loadVariables}
             defaultOptions
-            value={this.state.variableSelectables.filter(i => alarmsEventsFilter.variables.includes(i.value!))}
-            invalid={this.state.variableSelectables.filter(i => alarmsEventsFilter.variables.includes(i.value!)).length == 0}
+            filterOption={() => true}
+            value={this.toVariableOptions(alarmsEventsFilter.variables)}
+            invalid={alarmsEventsFilter.variables.length == 0}
           />
         </div>
         <div className="gf-form">
@@ -218,8 +245,9 @@ export class QueryEditor extends Component<Props, State> {
             onChange={(value) => { onChange({ ...query, alarmsEventsFilter: { ...query.alarmsEventsFilter, variables: value.map((v: SelectableValue<string>) => { return v.value! }) } }); onRunQuery(); }}
             loadOptions={this.loadVariables}
             defaultOptions
-            value={this.state.variableSelectables.filter(i => alarmsEventsFilter.variables.includes(i.value!))}
-            invalid={this.state.variableSelectables.filter(i => alarmsEventsFilter.variables.includes(i.value!)).length == 0}
+            filterOption={() => true}
+            value={this.toVariableOptions(alarmsEventsFilter.variables)}
+            invalid={alarmsEventsFilter.variables.length == 0}
           />
         </div>
       </div>;
@@ -233,8 +261,9 @@ export class QueryEditor extends Component<Props, State> {
         onChange={(value) => { onChange({ ...query, variableFilter: { ...query.variableFilter, variables: value.map((v: SelectableValue<string>) => { return v.value! }) } }); onRunQuery(); }}
         loadOptions={this.loadVariables}
         defaultOptions
-        value={this.state.variableSelectables.filter(i => variableFilter.variables.includes(i.value!))}
-        invalid={this.state.variableSelectables.filter(i => variableFilter.variables.includes(i.value!)).length == 0}
+        filterOption={() => true}
+        value={this.toVariableOptions(variableFilter.variables)}
+        invalid={variableFilter.variables.length == 0}
       />
     </div>
   </div>;

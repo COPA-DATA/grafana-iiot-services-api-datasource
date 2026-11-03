@@ -14,6 +14,22 @@ import { DataSourceQuery, SGApiDataSourceOptions, DataSourceQueryType, TemplateV
 
 import { getBackendSrv, getTemplateSrv } from "@grafana/runtime"
 
+/**
+ * Turns what the user typed into a zenon variable-name filter.
+ * Matches anywhere in the name; `*` inside the text is a wildcard:
+ * "" -> "*", "INV" -> "*INV*", "INV*PAC" -> "*INV*PAC*".
+ */
+export function toNamePattern(input?: string): string {
+  const typed = (input ?? '').trim();
+  return typed === '' ? '*' : ('*' + typed + '*').replace(/\*+/g, '*');
+}
+
+/** Case-insensitive test of a name against a pattern from toNamePattern(). */
+export function matchesNamePattern(name: string, pattern: string): boolean {
+  const body = pattern.split('*').map(part => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*');
+  return new RegExp('^' + body + '$', 'i').test(name);
+}
+
 export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOptions> {
   url: string;
   showOfflineDatasources: boolean;
@@ -576,7 +592,7 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
 
   }
 
-  findVariables(datasourceId: string) : Promise<{label:string,value:string}[]>{
+  findVariables(datasourceId: string, nameFilter?: string) : Promise<{label:string,value:string}[]>{
 
     if (datasourceId == undefined || datasourceId == '') {
       return Promise.resolve([]);
@@ -585,7 +601,8 @@ export class DataSource extends DataSourceApi<DataSourceQuery, SGApiDataSourceOp
     datasourceId = getTemplateSrv().replace(datasourceId);
 
     let requestUrl = this.url + "/api/v1/datasources/" + datasourceId + "/variables/query";
-    let requestBody = { fields: ["name"], nameFilter: { variableNames: ["*"] } };
+    // Filter on the server: only variables matching the typed text come back.
+    let requestBody = { fields: ["name"], nameFilter: { variableNames: [toNamePattern(nameFilter)] } };
 
     return getBackendSrv().datasourceRequest({
       url: requestUrl,
